@@ -43,8 +43,8 @@ function ModeToggle({ mode, setMode }: { mode: "live" | "history"; setMode: (m: 
         onClick={() => setMode("live")}
         className={`px-3 py-1.5 text-xs rounded transition ${
           mode === "live"
-            ? "bg-gold-500 text-zinc-900 font-semibold"
-            : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+            ? "bg-[var(--accent)] text-[var(--accent-foreground)] font-semibold"
+            : "bg-[var(--surface-overlay)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
         }`}
       >
         🔴 真实运行
@@ -53,8 +53,8 @@ function ModeToggle({ mode, setMode }: { mode: "live" | "history"; setMode: (m: 
         onClick={() => setMode("history")}
         className={`px-3 py-1.5 text-xs rounded transition ${
           mode === "history"
-            ? "bg-gold-500 text-zinc-900 font-semibold"
-            : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+            ? "bg-[var(--accent)] text-[var(--accent-foreground)] font-semibold"
+            : "bg-[var(--surface-overlay)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
         }`}
       >
         📜 看历史决议
@@ -106,7 +106,7 @@ function LiveMode() {
       />
 
       {submitError && (
-        <div className="text-sm text-red-400 px-4">⚠ {submitError}</div>
+        <div className="text-sm text-neg px-4">⚠ {submitError}</div>
       )}
 
       {/* Pipeline 流程图 */}
@@ -126,24 +126,24 @@ function LiveMode() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="rounded-lg ring-1 ring-zinc-800 bg-zinc-900 p-4"
+            className="border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-4"
           >
             <div className="flex items-center gap-2 mb-2">
               <RoleBadge role={selectedAgent.role} />
-              <span className="text-sm font-semibold text-zinc-200">{selectedAgent.label}</span>
+              <span className="text-sm font-semibold text-[var(--text-primary)]">{selectedAgent.label}</span>
               {selectedAgent.signal && (
-                <span className="text-xs text-zinc-400">
-                  SIGNAL: <span className="text-gold-400 font-mono">{selectedAgent.signal}</span>
+                <span className="text-xs text-[var(--text-secondary)]">
+                  SIGNAL: <span className="text-[var(--accent)] font-mono">{selectedAgent.signal}</span>
                   {selectedAgent.strength != null && ` · STRENGTH ${selectedAgent.strength}`}
                 </span>
               )}
             </div>
             {selectedAgent.preview ? (
-              <pre className="text-xs text-zinc-300 whitespace-pre-wrap max-h-96 overflow-y-auto">
+              <pre className="text-xs text-[var(--text-primary)] whitespace-pre-wrap max-h-96 overflow-y-auto">
                 {selectedAgent.preview}
               </pre>
             ) : (
-              <p className="text-xs text-zinc-500">该 agent 还没完成（preview 待补）</p>
+              <p className="text-xs text-[var(--text-tertiary)]">该 agent 还没完成（preview 待补）</p>
             )}
           </motion.div>
         )}
@@ -154,23 +154,23 @@ function LiveMode() {
         <VerdictResultCard status={status} />
       )}
       {status?.status === "error" && (
-        <div className="rounded-lg ring-1 ring-red-900 bg-red-950/30 p-4 text-sm text-red-200">
+        <div className="border border-[var(--neg)] chip-neg p-4 text-sm text-neg">
           ✗ 失败: {status.error ?? "未知"}
         </div>
       )}
 
       {/* 实时 events 流（折叠） */}
       {status?.events && status.events.length > 0 && (
-        <details className="rounded-lg ring-1 ring-zinc-800 bg-zinc-900 p-3">
-          <summary className="text-xs text-zinc-400 cursor-pointer">
+        <details className="border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-3">
+          <summary className="text-xs text-[var(--text-secondary)] cursor-pointer">
             📋 完整事件流（{status.events.length} 条，最新在下）
           </summary>
           <div className="mt-2 space-y-1 max-h-60 overflow-y-auto">
             {status.events.map((e, i) => (
-              <div key={i} className="text-xs font-mono text-zinc-400 flex gap-2">
-                <span className="text-zinc-600">{shortTime(e.ts as string)}</span>
-                <span className="text-gold-400">{e.phase as string}</span>
-                {e.round != null && <span className="text-zinc-500">round={e.round as number}</span>}
+              <div key={i} className="text-xs font-mono text-[var(--text-secondary)] flex gap-2">
+                <span className="text-[var(--text-tertiary)]">{shortTime(e.ts as string)}</span>
+                <span className="text-[var(--accent)]">{e.phase as string}</span>
+                {e.round != null && <span className="text-[var(--text-tertiary)]">round={e.round as number}</span>}
               </div>
             ))}
           </div>
@@ -207,15 +207,15 @@ function RunForm({
   }
 
   return (
-    <div className="rounded-lg ring-1 ring-zinc-800 bg-zinc-900 p-4">
+    <div className="border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-4">
       <div className="flex flex-wrap items-end gap-4">
         <div>
-          <label className="text-xs text-zinc-500 block mb-1">资产</label>
+          <label className="text-xs text-[var(--text-tertiary)] block mb-1">资产</label>
           <select
             value={symbol}
             onChange={(e) => setSymbol(e.target.value)}
             disabled={disabled}
-            className="bg-zinc-950 border border-zinc-700 rounded px-3 py-2 text-sm font-mono"
+            className="bg-[var(--surface-base)] border border-[var(--border-strong)] rounded px-3 py-2 text-sm font-mono"
           >
             {symbols.map((s) => (
               <option key={s} value={s}>{s}</option>
@@ -223,12 +223,12 @@ function RunForm({
           </select>
         </div>
         <div>
-          <label className="text-xs text-zinc-500 block mb-1">辩论上限</label>
+          <label className="text-xs text-[var(--text-tertiary)] block mb-1">辩论上限</label>
           <select
             value={maxRounds}
             onChange={(e) => setMaxRounds(parseInt(e.target.value, 10))}
             disabled={disabled}
-            className="bg-zinc-950 border border-zinc-700 rounded px-3 py-2 text-sm tabular-nums"
+            className="bg-[var(--surface-base)] border border-[var(--border-strong)] rounded px-3 py-2 text-sm tabular-nums"
           >
             <option value={1}>1 轮（不辩论，旧行为）</option>
             <option value={2}>2 轮（最少 cross-challenge）</option>
@@ -245,8 +245,8 @@ function RunForm({
           {running ? `🔄 运行中... (${connState})` : "▶ 启动委员会"}
         </Button>
       </div>
-      <p className="text-xs text-zinc-500 mt-3">
-        Round 1 / Round 2..N 内部 Quant + Risk <strong className="text-zinc-300">真并行</strong>；
+      <p className="text-xs text-[var(--text-tertiary)] mt-3">
+        Round 1 / Round 2..N 内部 Quant + Risk <strong className="text-[var(--text-primary)]">真并行</strong>；
         每轮检查收敛（连续 2 轮 SIGNAL/STRENGTH 不变）→ 提前退出；
         预计耗时 {Math.ceil(maxRounds * 0.6 + 1)} 分钟（消耗 token ~¥{(maxRounds * 0.0008).toFixed(3)}）
       </p>
@@ -272,40 +272,40 @@ function VerdictResultCard({ status }: { status: { result?: unknown } }) {
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="rounded-lg ring-2 ring-gold-500/40 bg-gradient-to-r from-gold-500/10 to-zinc-900 p-5"
+      className="border ring-[var(--border-strong)] bg-gradient-to-r from-[var(--surface-overlay)] to-[var(--surface-raised)] p-5"
     >
-      <h3 className="text-base font-semibold text-zinc-200 mb-3">🎬 委员会决议</h3>
+      <h3 className="text-base font-semibold text-[var(--text-primary)] mb-3">🎬 委员会决议</h3>
       <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
         <div>
-          <div className="text-xs text-zinc-500">资产</div>
-          <div className="font-mono text-gold-400">{result.asset ?? "—"}</div>
+          <div className="text-xs text-[var(--text-tertiary)]">资产</div>
+          <div className="font-mono text-[var(--accent)]">{result.asset ?? "—"}</div>
         </div>
         <div>
-          <div className="text-xs text-zinc-500">verdict</div>
+          <div className="text-xs text-[var(--text-tertiary)]">verdict</div>
           <VerdictBadge verdict={v?.verdict ?? null} />
         </div>
         <div>
-          <div className="text-xs text-zinc-500">confidence</div>
-          <div className="text-lg tabular-nums text-gold-400 font-semibold">
+          <div className="text-xs text-[var(--text-tertiary)]">confidence</div>
+          <div className="text-lg tabular-nums text-[var(--accent)] font-semibold">
             {v?.confidence != null ? v.confidence.toFixed(2) : "—"}
           </div>
         </div>
         {v?.dominant_view && (
           <div>
-            <div className="text-xs text-zinc-500">dominant</div>
+            <div className="text-xs text-[var(--text-tertiary)]">dominant</div>
             <RoleBadge role={v.dominant_view} />
           </div>
         )}
         {v?.alloc_cny != null && (
           <div>
-            <div className="text-xs text-zinc-500">建议 ¥</div>
+            <div className="text-xs text-[var(--text-tertiary)]">建议 ¥</div>
             <div
               className={`text-sm tabular-nums font-semibold ${
                 v.alloc_cny > 0
-                  ? "text-green-400"
+                  ? "text-pos"
                   : v.alloc_cny < 0
-                    ? "text-red-400"
-                    : "text-zinc-400"
+                    ? "text-neg"
+                    : "text-[var(--text-secondary)]"
               }`}
             >
               {v.alloc_cny > 0 ? "+" : ""}{v.alloc_cny.toLocaleString()}
@@ -313,9 +313,9 @@ function VerdictResultCard({ status }: { status: { result?: unknown } }) {
           </div>
         )}
         {dm && (
-          <div className="ml-auto text-xs text-zinc-400">
+          <div className="ml-auto text-xs text-[var(--text-secondary)]">
             🗣 {dm.final_round}/{dm.max_rounds} 轮{" "}
-            {dm.converged ? <span className="text-green-400">✓ 已收敛</span> : <span className="text-amber-400">达上限</span>}
+            {dm.converged ? <span className="text-pos">✓ 已收敛</span> : <span className="text-warn">达上限</span>}
           </div>
         )}
       </div>
@@ -353,14 +353,14 @@ function HistoryMode() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <label className="text-xs text-zinc-500">选择历史决议:</label>
+        <label className="text-xs text-[var(--text-tertiary)]">选择历史决议:</label>
         <select
           value={selected ? `${selected.date}::${selected.symbol}` : ""}
           onChange={(e) => {
             const [date, symbol] = e.target.value.split("::");
             setSelected({ date, symbol });
           }}
-          className="bg-zinc-950 border border-zinc-700 rounded px-2 py-1.5 text-sm font-mono"
+          className="bg-[var(--surface-base)] border border-[var(--border-strong)] rounded px-2 py-1.5 text-sm font-mono"
         >
           {sessions?.sessions.map((s, i) => (
             <option key={i} value={`${s.date}::${s.symbol}`}>
@@ -378,12 +378,12 @@ function HistoryMode() {
           <div className="grid gap-3 md:grid-cols-2">
             {stages.flatMap((s) =>
               s.agents.map((a) => (
-                <details key={a.id} className="rounded ring-1 ring-zinc-800 bg-zinc-900 p-3">
+                <details key={a.id} className="rounded border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-3">
                   <summary className="cursor-pointer text-sm">
-                    <RoleBadge role={a.role} /> <span className="ml-2 text-zinc-300">{s.label} — {a.label}</span>
+                    <RoleBadge role={a.role} /> <span className="ml-2 text-[var(--text-primary)]">{s.label} — {a.label}</span>
                   </summary>
                   {a.preview && (
-                    <pre className="mt-2 text-xs text-zinc-400 whitespace-pre-wrap max-h-60 overflow-auto">
+                    <pre className="mt-2 text-xs text-[var(--text-secondary)] whitespace-pre-wrap max-h-60 overflow-auto">
                       {a.preview}
                     </pre>
                   )}

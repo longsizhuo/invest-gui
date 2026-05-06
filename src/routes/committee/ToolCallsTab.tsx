@@ -23,19 +23,19 @@ export function ToolCallsTab() {
     fetcher,
   );
 
-  if (isLoading) return <div className="text-zinc-400">加载中...</div>;
-  if (error) return <div className="text-red-400">加载失败: {error.message}</div>;
+  if (isLoading) return <div className="text-[var(--text-secondary)]">加载中...</div>;
+  if (error) return <div className="text-neg">加载失败: {error.message}</div>;
   if (!data) return null;
 
   if (data.count === 0) {
     return (
       <div className="space-y-3">
         <FilterBar filter={filter} onChange={setFilter} />
-        <div className="rounded-lg ring-1 ring-zinc-800 bg-zinc-900 p-6 text-center text-zinc-400">
+        <div className="border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-6 text-center text-[var(--text-secondary)]">
           <p>暂无 tool 调用记录。</p>
           <p className="text-xs mt-2">
             每次 agent 主动调 tool（5 个之一）会自动落盘到{" "}
-            <code className="bg-zinc-950 px-1 rounded">memory/.state/tool_calls.jsonl</code>
+            <code className="bg-[var(--surface-base)] px-1 rounded">memory/.state/tool_calls.jsonl</code>
             。下次 daily_report 跑后会有数据。
           </p>
         </div>
@@ -46,44 +46,44 @@ export function ToolCallsTab() {
   return (
     <div className="space-y-3">
       <FilterBar filter={filter} onChange={setFilter} />
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-[var(--text-tertiary)]">
         共 {data.count} 条调用记录（最新在前）
       </p>
       <div className="space-y-2 max-h-[70vh] overflow-y-auto">
         {data.records.map((r, i) => (
-          <div key={i} className="rounded-lg ring-1 ring-zinc-800 bg-zinc-900 p-3">
+          <div key={i} className="border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-3">
             <div className="flex items-baseline justify-between mb-2">
               <div className="flex items-center gap-2 text-xs">
                 <RoleBadge role={r.agent_role} />
-                <code className="font-mono text-gold-400">{r.tool_name}</code>
+                <code className="font-mono text-[var(--accent)]">{r.tool_name}</code>
                 {r.asset && (
-                  <span className="text-zinc-500">on {r.asset}</span>
+                  <span className="text-[var(--text-tertiary)]">on {r.asset}</span>
                 )}
                 {r.round && (
-                  <span className="text-zinc-500">@ {r.round}</span>
+                  <span className="text-[var(--text-tertiary)]">@ {r.round}</span>
                 )}
                 {r.iteration > 0 && (
-                  <span className="text-zinc-500">iter {r.iteration}</span>
+                  <span className="text-[var(--text-tertiary)]">iter {r.iteration}</span>
                 )}
               </div>
-              <div className="text-xs text-zinc-500 tabular-nums">
+              <div className="text-xs text-[var(--text-tertiary)] tabular-nums">
                 {shortTime(r.ts)} · {r.latency_ms} ms
               </div>
             </div>
             <details>
-              <summary className="text-xs text-zinc-400 cursor-pointer">
+              <summary className="text-xs text-[var(--text-secondary)] cursor-pointer">
                 参数 + 结果预览（点击展开）
               </summary>
               <div className="mt-2 grid gap-2 md:grid-cols-2">
-                <div className="rounded bg-zinc-950/60 border border-zinc-800 p-2">
-                  <div className="text-xs text-zinc-500 mb-1">参数</div>
-                  <pre className="text-xs text-zinc-300 whitespace-pre-wrap">
+                <div className="rounded bg-[var(--surface-base)]/60 border border-[var(--border-subtle)] p-2">
+                  <div className="text-xs text-[var(--text-tertiary)] mb-1">参数</div>
+                  <pre className="text-xs text-[var(--text-primary)] whitespace-pre-wrap">
                     {JSON.stringify(r.arguments, null, 2)}
                   </pre>
                 </div>
-                <div className="rounded bg-zinc-950/60 border border-zinc-800 p-2">
-                  <div className="text-xs text-zinc-500 mb-1">返回（前 200 字）</div>
-                  <pre className="text-xs text-zinc-300 whitespace-pre-wrap">
+                <div className="rounded bg-[var(--surface-base)]/60 border border-[var(--border-subtle)] p-2">
+                  <div className="text-xs text-[var(--text-tertiary)] mb-1">返回（前 200 字）</div>
+                  <pre className="text-xs text-[var(--text-primary)] whitespace-pre-wrap">
                     {r.result_preview}
                   </pre>
                 </div>
@@ -105,17 +105,17 @@ function FilterBar({
 }) {
   return (
     <div className="flex flex-wrap gap-3 items-center">
-      <label className="text-xs text-zinc-500">过滤：</label>
+      <label className="text-xs text-[var(--text-tertiary)]">过滤：</label>
       <input
         placeholder="asset (如 NDQ.AX)"
         value={filter.asset}
         onChange={(e) => onChange({ ...filter, asset: e.target.value })}
-        className="bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs font-mono"
+        className="bg-[var(--surface-base)] border border-[var(--border-strong)] rounded px-2 py-1 text-xs font-mono"
       />
       <select
         value={filter.role}
         onChange={(e) => onChange({ ...filter, role: e.target.value })}
-        className="bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs"
+        className="bg-[var(--surface-base)] border border-[var(--border-strong)] rounded px-2 py-1 text-xs"
       >
         <option value="">全部角色</option>
         <option value="macro">macro</option>

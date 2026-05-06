@@ -14,8 +14,8 @@ export function DataSourcesTab() {
     { refreshInterval: 60_000 },
   );
 
-  if (isLoading) return <div className="text-zinc-400">检测中...</div>;
-  if (error) return <div className="text-red-400">加载失败: {error.message}</div>;
+  if (isLoading) return <div className="text-[var(--text-secondary)]">检测中...</div>;
+  if (error) return <div className="text-neg">加载失败: {error.message}</div>;
   if (!data) return null;
 
   const healthy = data.sources.filter((s) => !s.is_stale).length;
@@ -24,21 +24,21 @@ export function DataSourcesTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-baseline gap-3">
-        <span className="text-zinc-300">
-          <span className="text-green-400 font-semibold">{healthy} 健康</span>
+        <span className="text-[var(--text-primary)]">
+          <span className="text-pos font-semibold">{healthy} 健康</span>
           {stale > 0 && (
             <>
-              <span className="text-zinc-500"> / </span>
-              <span className="text-red-400 font-semibold">{stale} 陈旧</span>
+              <span className="text-[var(--text-tertiary)]"> / </span>
+              <span className="text-neg font-semibold">{stale} 陈旧</span>
             </>
           )}
         </span>
-        <span className="text-xs text-zinc-500">每 60 秒自动检测</span>
+        <span className="text-xs text-[var(--text-tertiary)]">每 60 秒自动检测</span>
       </div>
 
-      <div className="rounded-lg ring-1 ring-zinc-800 overflow-hidden">
+      <div className="border border-[var(--border-subtle)] overflow-hidden">
         <table className="w-full text-sm tabular-nums">
-          <thead className="bg-zinc-900 text-zinc-400 text-xs">
+          <thead className="bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs">
             <tr>
               <th className="px-3 py-2 text-center w-8">状态</th>
               <th className="px-3 py-2 text-left">名称</th>
@@ -51,23 +51,23 @@ export function DataSourcesTab() {
             {data.sources.map((s) => (
               <tr
                 key={s.name}
-                className={`border-t border-zinc-800 ${s.is_stale ? "bg-red-950/20" : ""}`}
+                className={`border-t border-[var(--border-subtle)] ${s.is_stale ? "chip-neg" : ""}`}
               >
                 <td className="px-3 py-2 text-center text-lg">
                   {s.is_stale ? (
-                    <span className="text-red-400" title="陈旧或获取失败">⚠</span>
+                    <span className="text-neg" title="陈旧或获取失败">⚠</span>
                   ) : (
-                    <span className="text-green-400" title="健康">✓</span>
+                    <span className="text-pos" title="健康">✓</span>
                   )}
                 </td>
-                <td className="px-3 py-2 font-mono text-xs text-gold-400">{s.name}</td>
-                <td className="px-3 py-2 text-zinc-400 text-xs">{s.description}</td>
-                <td className="px-3 py-2 text-xs text-zinc-500">
+                <td className="px-3 py-2 font-mono text-xs text-[var(--accent)]">{s.name}</td>
+                <td className="px-3 py-2 text-[var(--text-secondary)] text-xs">{s.description}</td>
+                <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">
                   {s.last_success_at ? shortTime(s.last_success_at) : "—"}
                 </td>
-                <td className="px-3 py-2 text-xs text-zinc-300">
+                <td className="px-3 py-2 text-xs text-[var(--text-primary)]">
                   {s.error ? (
-                    <span className="text-red-400">{s.error.slice(0, 50)}</span>
+                    <span className="text-neg">{s.error.slice(0, 50)}</span>
                   ) : (
                     String(s.sample_value ?? "—").slice(0, 50)
                   )}

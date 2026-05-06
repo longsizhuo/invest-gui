@@ -5,9 +5,8 @@ import App from "./App";
 import Dashboard from "./routes/Dashboard";
 import History from "./routes/History";
 import Strategy from "./routes/Strategy";
-import Committee from "./routes/Committee";
+import Committee from "./routes/committee";
 import System from "./routes/System";
-import Transparency from "./routes/transparency";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -20,7 +19,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="strategy" element={<Strategy />} />
           <Route path="committee" element={<Committee />} />
           <Route path="system" element={<System />} />
-          <Route path="transparency" element={<Transparency />} />
+          {/* /transparency 已并入 /committee（书签兼容） */}
+          <Route path="transparency" element={<Navigate to="/committee" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

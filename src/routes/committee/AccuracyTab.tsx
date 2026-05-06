@@ -24,14 +24,14 @@ export function AccuracyTab() {
     fetcher,
   );
 
-  if (!summary) return <div className="text-zinc-400">加载中...</div>;
+  if (!summary) return <div className="text-[var(--text-secondary)]">加载中...</div>;
 
   if (summary.total === 0) {
     return (
-      <div className="rounded-lg ring-1 ring-zinc-800 bg-zinc-900 p-6 text-center text-zinc-400">
+      <div className="border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-6 text-center text-[var(--text-secondary)]">
         <p>暂无 verdict review 数据。</p>
         <p className="text-xs mt-2">
-          需先跑 <code className="bg-zinc-950 px-1 rounded">jobs/verdict_review</code>
+          需先跑 <code className="bg-[var(--surface-base)] px-1 rounded">jobs/verdict_review</code>
           （脚本完整但默认无 cron，手动 <code>python -m jobs.verdict_review</code> 触发）
         </p>
       </div>
@@ -69,12 +69,12 @@ export function AccuracyTab() {
 
       {/* 诚实解读 banner */}
       {summary.directional_only_hit_rate != null && summary.directional_only_hit_rate < 0.5 && (
-        <div className="rounded-lg ring-1 ring-orange-500/30 bg-orange-500/10 p-4 text-sm">
-          <strong className="text-orange-400">诚实解读：</strong>
-          <span className="text-zinc-300 ml-2">
+        <div className="border border-[var(--warn)] chip-warn p-4 text-sm">
+          <strong className="text-warn">诚实解读：</strong>
+          <span className="text-[var(--text-primary)] ml-2">
             HOLD 占多数推高了"整体命中率"（HOLD 是 "市场没动 = 对" 的统计假象）。
             剔除后真实方向性命中{" "}
-            <span className="font-bold text-orange-300 tabular-nums">
+            <span className="font-bold text-warn tabular-nums">
               {(summary.directional_only_hit_rate * 100).toFixed(1)}%
             </span>
             ，反映系统目前在方向性预测上还不强，价值在于风险控制与执行纪律，不是预测准确率。
@@ -84,10 +84,10 @@ export function AccuracyTab() {
 
       {/* 按时间窗口 */}
       <section>
-        <h3 className="text-sm font-semibold text-zinc-300 mb-2">按时间窗口</h3>
-        <div className="rounded-lg ring-1 ring-zinc-800 overflow-hidden">
+        <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2">按时间窗口</h3>
+        <div className="border border-[var(--border-subtle)] overflow-hidden">
           <table className="w-full text-sm tabular-nums">
-            <thead className="bg-zinc-900 text-zinc-400 text-xs">
+            <thead className="bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs">
               <tr>
                 <th className="px-3 py-2 text-left">窗口</th>
                 <th className="px-3 py-2 text-right">N</th>
@@ -100,10 +100,10 @@ export function AccuracyTab() {
                 // OpenAPI Dict[str, Any] 映射成 Record<string, unknown>，需要断言成具体形状
                 const v = raw as { n: number; hit_rate: number };
                 return (
-                  <tr key={w} className="border-t border-zinc-800">
-                    <td className="px-3 py-2 text-zinc-300 font-mono">{w}</td>
-                    <td className="px-3 py-2 text-right text-zinc-400">{v.n}</td>
-                    <td className="px-3 py-2 text-right text-gold-400">
+                  <tr key={w} className="border-t border-[var(--border-subtle)]">
+                    <td className="px-3 py-2 text-[var(--text-primary)] font-mono">{w}</td>
+                    <td className="px-3 py-2 text-right text-[var(--text-secondary)]">{v.n}</td>
+                    <td className="px-3 py-2 text-right text-[var(--accent)]">
                       {(v.hit_rate * 100).toFixed(1)}%
                     </td>
                     <td className="px-3 py-2">
@@ -119,10 +119,10 @@ export function AccuracyTab() {
 
       {/* 按 verdict 类型 */}
       <section>
-        <h3 className="text-sm font-semibold text-zinc-300 mb-2">按 verdict 类型</h3>
-        <div className="rounded-lg ring-1 ring-zinc-800 overflow-hidden">
+        <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2">按 verdict 类型</h3>
+        <div className="border border-[var(--border-subtle)] overflow-hidden">
           <table className="w-full text-sm tabular-nums">
-            <thead className="bg-zinc-900 text-zinc-400 text-xs">
+            <thead className="bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs">
               <tr>
                 <th className="px-3 py-2 text-left">verdict</th>
                 <th className="px-3 py-2 text-right">N</th>
@@ -142,10 +142,10 @@ export function AccuracyTab() {
                   hit_rate_30d: number | null;
                 };
                 return (
-                  <tr key={v} className="border-t border-zinc-800">
+                  <tr key={v} className="border-t border-[var(--border-subtle)]">
                     <td className="px-3 py-2"><VerdictBadge verdict={v} /></td>
-                    <td className="px-3 py-2 text-right text-zinc-400">{d.n}</td>
-                    <td className="px-3 py-2 text-right text-zinc-400">{d.avg_confidence}</td>
+                    <td className="px-3 py-2 text-right text-[var(--text-secondary)]">{d.n}</td>
+                    <td className="px-3 py-2 text-right text-[var(--text-secondary)]">{d.avg_confidence}</td>
                     <td className="px-3 py-2 text-right">{fmtPct(d.hit_rate_1d)}</td>
                     <td className="px-3 py-2 text-right">{fmtPct(d.hit_rate_7d)}</td>
                     <td className="px-3 py-2 text-right">{fmtPct(d.hit_rate_30d)}</td>
@@ -159,12 +159,12 @@ export function AccuracyTab() {
 
       {/* 完整 markdown 报告 */}
       {report?.exists && report.content && (
-        <details className="rounded-lg ring-1 ring-zinc-800 bg-zinc-900 p-3">
-          <summary className="text-xs text-zinc-400 cursor-pointer">
+        <details className="border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-3">
+          <summary className="text-xs text-[var(--text-secondary)] cursor-pointer">
             📄 完整 markdown 报告（jobs/verdict_review 输出）
             {report.generated_at && <span className="ml-2">· 生成于 {report.generated_at}</span>}
           </summary>
-          <pre className="mt-2 text-xs text-zinc-300 whitespace-pre-wrap max-h-[600px] overflow-auto">
+          <pre className="mt-2 text-xs text-[var(--text-primary)] whitespace-pre-wrap max-h-[600px] overflow-auto">
             {report.content}
           </pre>
         </details>
@@ -185,12 +185,12 @@ function KpiCard({
   highlight?: boolean;
 }) {
   return (
-    <div className={`rounded-lg ring-1 p-4 ${highlight ? "ring-orange-500/30 bg-orange-500/5" : "ring-zinc-800 bg-zinc-900"}`}>
-      <div className="text-xs text-zinc-500">{label}</div>
-      <div className={`text-2xl font-bold mt-1 tabular-nums ${highlight ? "text-orange-400" : "text-gold-400"}`}>
+    <div className={`border p-4 ${highlight ? "border border-[var(--warn)] chip-warn" : "border border-[var(--border-subtle)] bg-[var(--surface-raised)]"}`}>
+      <div className="text-xs text-[var(--text-tertiary)]">{label}</div>
+      <div className={`text-2xl font-bold mt-1 tabular-nums ${highlight ? "text-warn" : "text-[var(--accent)]"}`}>
         {value}
       </div>
-      {hint && <div className="text-xs text-zinc-500 mt-1">{hint}</div>}
+      {hint && <div className="text-xs text-[var(--text-tertiary)] mt-1">{hint}</div>}
     </div>
   );
 }
@@ -198,9 +198,9 @@ function KpiCard({
 function Bar({ pct }: { pct: number }) {
   const clamped = Math.max(0, Math.min(100, pct));
   return (
-    <div className="w-full bg-zinc-950 rounded h-2 overflow-hidden">
+    <div className="w-full bg-[var(--surface-base)] rounded h-2 overflow-hidden">
       <div
-        className="h-full bg-gold-500 transition-all"
+        className="h-full bg-[var(--accent)] transition-all"
         style={{ width: `${clamped}%` }}
       />
     </div>
