@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 全局：等宽字体里的数字对齐 */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

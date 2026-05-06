@@ -1,0 +1,32 @@
+{
+  "name": "invest-gui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "invest 多资产 agent 系统的 Web GUI（消费 longsizhuo/openInvest 的 FastAPI）",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "gen-types": "bash scripts/gen-types.sh",
+    "deploy": "bash scripts/deploy.sh"
+  },
+  "dependencies": {
+    "motion": "^12.38.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.27.0",
+    "swr": "^2.2.5"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "openapi-typescript": "^7.4.2",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  }
+}
