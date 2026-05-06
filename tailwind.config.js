@@ -3,19 +3,38 @@ export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      // 语义 token —— 通过 CSS variable，统一在 src/index.css :root 维护
       colors: {
-        // 投资 GUI 主色：稳重金色（黄金主题），辅以深灰背景
-        gold: {
-          50: "#fffbea",
-          100: "#fef3c7",
-          400: "#fbbf24",
-          500: "#f59e0b",
-          600: "#d97706",
-          700: "#b45309",
+        surface: {
+          base: "var(--surface-base)",
+          raised: "var(--surface-raised)",
+          overlay: "var(--surface-overlay)",
+          inverse: "var(--surface-inverse)",
+        },
+        border: {
+          subtle: "var(--border-subtle)",
+          strong: "var(--border-strong)",
+        },
+        text: {
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          tertiary: "var(--text-tertiary)",
+          inverse: "var(--text-inverse)",
+        },
+        accent: {
+          DEFAULT: "var(--accent)",
+          hover: "var(--accent-hover)",
+          foreground: "var(--accent-foreground)",
         },
       },
       fontFamily: {
-        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+        display: ["var(--font-display)"],
+        ui: ["var(--font-ui)"],
+        mono: ["var(--font-mono)"],
+      },
+      letterSpacing: {
+        "display-tight": "-0.02em",
+        "display-tighter": "-0.04em",
       },
     },
   },
