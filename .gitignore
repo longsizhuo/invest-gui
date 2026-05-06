@@ -4,6 +4,9 @@ node_modules
 # 构建产物
 dist
 *.tsbuildinfo
+# tsc --build 会从 vite.config.ts 生成 .js + .d.ts，本地构建产物不入 git
+vite.config.js
+vite.config.d.ts
 
 # 编辑器
 .vscode
