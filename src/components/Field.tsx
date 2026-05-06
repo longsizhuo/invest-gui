@@ -12,15 +12,36 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-xs text-zinc-400 mb-1 block">{label}</span>
+      <span className="text-xs text-[var(--text-tertiary)] mb-1.5 block uppercase tracking-wide">
+        {label}
+      </span>
       {children}
-      {hint && <span className="text-xs text-zinc-500 mt-1 block">{hint}</span>}
+      {hint && (
+        <span className="text-xs text-[var(--text-tertiary)] mt-1.5 block">
+          {hint}
+        </span>
+      )}
     </label>
   );
 }
 
+/**
+ * 输入框：底部强边为主，focus 时变白色加粗
+ * 数字 input 自动 tabular-nums + mono 字体
+ */
 export const inputClass =
-  "w-full bg-zinc-950 border border-zinc-700 focus:border-gold-500 focus:ring-1 focus:ring-gold-500 rounded px-3 py-2 text-sm tabular-nums outline-none transition";
+  "w-full bg-[var(--surface-base)] " +
+  "border border-[var(--border-strong)] " +
+  "px-3 py-2 text-sm tabular-nums font-mono " +
+  "text-[var(--text-primary)] " +
+  "placeholder:text-[var(--text-tertiary)] " +
+  "focus:border-[var(--accent)] focus:outline-none " +
+  "transition-colors duration-100";
 
 export const selectClass =
-  "w-full bg-zinc-950 border border-zinc-700 focus:border-gold-500 focus:ring-1 focus:ring-gold-500 rounded px-3 py-2 text-sm outline-none transition";
+  "w-full bg-[var(--surface-base)] " +
+  "border border-[var(--border-strong)] " +
+  "px-3 py-2 text-sm " +
+  "text-[var(--text-primary)] " +
+  "focus:border-[var(--accent)] focus:outline-none " +
+  "transition-colors duration-100";

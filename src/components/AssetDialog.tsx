@@ -199,7 +199,7 @@ export function AssetDialog({
           />
         </Field>
 
-        {error && <p className="text-sm text-red-400">⚠ {error}</p>}
+        {error && <p className="text-sm text-neg">⚠ {error}</p>}
 
         <div className="flex justify-between items-center pt-2">
           <div>

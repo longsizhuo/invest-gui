@@ -8,8 +8,8 @@ export default function History() {
   const [filter, setFilter] = useState<string>("");
   const { data, error, isLoading } = useSWR<HistoryResponse>("/api/history?limit=200", fetcher);
 
-  if (isLoading) return <div className="text-zinc-400">加载历史中...</div>;
-  if (error) return <div className="text-red-400">加载失败: {error.message}</div>;
+  if (isLoading) return <div className="text-[var(--text-secondary)]">加载历史中...</div>;
+  if (error) return <div className="text-neg">加载失败: {error.message}</div>;
   if (!data) return null;
 
   const symbols = Array.from(new Set(data.rows.map((r) => r.symbol).filter(Boolean) as string[])).sort();
@@ -20,14 +20,14 @@ export default function History() {
       <header className="flex items-baseline justify-between">
         <div>
           <h1 className="text-2xl font-bold mb-1">交易流水</h1>
-          <p className="text-xs text-zinc-500">最近 {data.count} 笔（按时间倒序）</p>
+          <p className="text-xs text-[var(--text-tertiary)]">最近 {data.count} 笔（按时间倒序）</p>
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs text-zinc-500">资产过滤</label>
+          <label className="text-xs text-[var(--text-tertiary)]">资产过滤</label>
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-sm"
+            className="bg-[var(--surface-raised)] border border-[var(--border-strong)] rounded px-2 py-1 text-sm"
           >
             <option value="">全部</option>
             {symbols.map((s) => (
@@ -39,9 +39,9 @@ export default function History() {
         </div>
       </header>
 
-      <div className="rounded-lg ring-1 ring-zinc-800 overflow-hidden">
+      <div className="border border-[var(--border-subtle)] overflow-hidden">
         <table className="w-full text-sm tabular-nums">
-          <thead className="bg-zinc-900 text-zinc-400 text-xs">
+          <thead className="bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs">
             <tr>
               <th className="px-3 py-2 text-left font-medium">时间</th>
               <th className="px-3 py-2 text-left font-medium">动作</th>
@@ -55,26 +55,26 @@ export default function History() {
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="text-center text-zinc-500 py-6">
+                <td colSpan={7} className="text-center text-[var(--text-tertiary)] py-6">
                   暂无记录
                 </td>
               </tr>
             )}
             {rows.map((r, i) => (
-              <tr key={i} className="border-t border-zinc-800 hover:bg-zinc-900/40">
-                <td className="px-3 py-2 text-zinc-400">{shortTime(r.ts_origin ?? r.ts)}</td>
+              <tr key={i} className="border-t border-[var(--border-subtle)] hover:bg-[var(--surface-raised)]/40">
+                <td className="px-3 py-2 text-[var(--text-secondary)]">{shortTime(r.ts_origin ?? r.ts)}</td>
                 <td className="px-3 py-2">
                   <ActionBadge action={r.action} />
                 </td>
-                <td className="px-3 py-2 text-zinc-200">{r.symbol ?? "—"}</td>
-                <td className="px-3 py-2 text-right text-zinc-200">{r.units ?? "—"}</td>
-                <td className="px-3 py-2 text-right text-zinc-200">
+                <td className="px-3 py-2 text-[var(--text-primary)]">{r.symbol ?? "—"}</td>
+                <td className="px-3 py-2 text-right text-[var(--text-primary)]">{r.units ?? "—"}</td>
+                <td className="px-3 py-2 text-right text-[var(--text-primary)]">
                   {r.price_per_unit != null ? formatCNY(r.price_per_unit) : "—"}
                 </td>
-                <td className="px-3 py-2 text-right text-zinc-200">
+                <td className="px-3 py-2 text-right text-[var(--text-primary)]">
                   {r.total_amount != null ? formatCNY(r.total_amount) : "—"}
                 </td>
-                <td className="px-3 py-2 text-zinc-500 text-xs">{r.source ?? "—"}</td>
+                <td className="px-3 py-2 text-[var(--text-tertiary)] text-xs">{r.source ?? "—"}</td>
               </tr>
             ))}
           </tbody>
@@ -85,13 +85,22 @@ export default function History() {
 }
 
 function ActionBadge({ action }: { action: string | null | undefined }) {
-  if (!action) return <span className="text-zinc-500">—</span>;
+  if (!action) return <span className="text-[var(--text-tertiary)]">—</span>;
+  // bought/sold 是涨/跌方向，用 pos/neg；deposit/withdraw 中性结构
   const colors: Record<string, string> = {
-    bought: "bg-green-500/20 text-green-300 ring-green-500/30",
-    sold: "bg-red-500/20 text-red-300 ring-red-500/30",
-    deposit: "bg-blue-500/20 text-blue-300 ring-blue-500/30",
-    withdraw: "bg-orange-500/20 text-orange-300 ring-orange-500/30",
+    bought: "chip-pos border border-[var(--pos)]",
+    sold: "chip-neg border border-[var(--neg)]",
+    deposit: "border border-[var(--border-strong)] text-[var(--text-primary)]",
+    withdraw: "border border-[var(--border-strong)] text-[var(--text-secondary)]",
   };
-  const cls = colors[action] ?? "bg-zinc-700/40 text-zinc-300 ring-zinc-600";
-  return <span className={`rounded px-2 py-0.5 text-xs ring-1 ${cls}`}>{action}</span>;
+  const cls =
+    colors[action] ??
+    "border border-[var(--border-subtle)] text-[var(--text-tertiary)]";
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 text-[11px] font-mono uppercase tracking-wider ${cls}`}
+    >
+      {action}
+    </span>
+  );
 }

@@ -15,14 +15,14 @@ export function PnLChart() {
 
   if (errored) {
     return (
-      <div className="rounded-lg ring-1 ring-zinc-800 bg-zinc-900 p-6 text-center text-zinc-400 text-sm">
-        PnL 趋势图未生成。等 <code className="bg-zinc-950 px-1 rounded">jobs/pnl_snapshot</code> 跑过一次后再刷新。
+      <div className="border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-6 text-center text-[var(--text-secondary)] text-sm">
+        PnL 趋势图未生成。等 <code className="bg-[var(--surface-base)] px-1 rounded">jobs/pnl_snapshot</code> 跑过一次后再刷新。
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg ring-1 ring-zinc-800 bg-zinc-900 p-3">
+    <div className="border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-3">
       <img
         src={`/api/pnl_chart.svg?_=${cacheBuster}`}
         alt="PnL 趋势 vs 8 基准"

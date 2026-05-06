@@ -31,7 +31,7 @@ export function Tabs<TId extends string = string>({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-1 border-b border-zinc-800">
+      <div className="flex flex-wrap gap-1 border-b border-[var(--border-subtle)]">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -39,8 +39,8 @@ export function Tabs<TId extends string = string>({
             title={t.hint}
             className={`px-3 py-2 text-sm border-b-2 -mb-px transition ${
               active === t.id
-                ? "border-gold-500 text-gold-400"
-                : "border-transparent text-zinc-400 hover:text-zinc-200"
+                ? "border-[var(--accent)] text-[var(--accent)]"
+                : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             {t.label}

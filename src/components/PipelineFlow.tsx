@@ -50,14 +50,14 @@ export function PipelineFlow({
 }) {
   if (stages.length === 0) {
     return (
-      <div className="rounded-lg ring-1 ring-zinc-800 bg-zinc-900 p-6 text-center text-zinc-500">
+      <div className="border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-6 text-center text-[var(--text-tertiary)]">
         等待启动...
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg ring-1 ring-zinc-800 bg-gradient-to-b from-zinc-900 to-zinc-950 p-6 overflow-x-auto">
+    <div className="border border-[var(--border-subtle)] bg-gradient-to-b from-[var(--surface-raised)] to-[var(--surface-base)] p-6 overflow-x-auto">
       <div className="flex items-stretch gap-2 min-w-fit">
         <AnimatePresence>
           {stages.map((stage, i) => {
@@ -110,16 +110,16 @@ function StageBlock({
         <div
           className={`text-xs font-semibold ${
             stage.state === "active"
-              ? "text-gold-300"
+              ? "text-[var(--accent)]"
               : stage.state === "done"
-                ? "text-green-400"
-                : "text-zinc-500"
+                ? "text-pos"
+                : "text-[var(--text-tertiary)]"
           } ${isStageSelected ? "underline" : ""}`}
         >
           {stage.label}
         </div>
         {stage.hint && (
-          <div className="text-[10px] text-zinc-600 mt-0.5">{stage.hint}</div>
+          <div className="text-[10px] text-[var(--text-tertiary)] mt-0.5">{stage.hint}</div>
         )}
       </div>
 
@@ -158,7 +158,7 @@ function AgentNodeView({
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       className={`relative flex flex-col items-center gap-1 cursor-pointer focus:outline-none ${
-        selected ? "ring-2 ring-gold-500 ring-offset-2 ring-offset-zinc-950 rounded-full" : ""
+        selected ? "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-base)] rounded-full" : ""
       }`}
       title={agent.preview ?? agent.label}
     >
@@ -192,9 +192,9 @@ function AgentNodeView({
         </span>
       </motion.div>
 
-      <div className="text-[11px] text-zinc-400 font-mono">{agent.label}</div>
+      <div className="text-[11px] text-[var(--text-secondary)] font-mono">{agent.label}</div>
       {agent.signal && (
-        <div className="text-[10px] text-zinc-500">
+        <div className="text-[10px] text-[var(--text-tertiary)]">
           {agent.signal}
           {agent.strength != null && ` · ${agent.strength}`}
         </div>
@@ -206,14 +206,10 @@ function AgentNodeView({
 function StageConnector({ active, flowing }: { active: boolean; flowing: boolean }) {
   return (
     <div className="w-12 self-center h-1 mx-1 relative overflow-hidden rounded-full">
-      <div
-        className={`absolute inset-0 ${
-          active ? "bg-gradient-to-r from-blue-500/40 to-blue-500/40" : "bg-zinc-800"
-        }`}
-      />
+      <div className="absolute inset-0 bg-[var(--surface-overlay)]" />
       {active && !flowing && (
         <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-blue-500 to-green-500"
+          className="absolute inset-0 bg-gradient-to-r from-[var(--text-tertiary)] to-[var(--accent)]"
           initial={{ scaleX: 0, originX: 0 }}
           animate={{ scaleX: 1 }}
           transition={{ duration: 0.6 }}
@@ -225,7 +221,7 @@ function StageConnector({ active, flowing }: { active: boolean; flowing: boolean
             {[0, 1, 2].map((i) => (
               <motion.div
                 key={i}
-                className="absolute top-0 h-1 w-2.5 rounded-full bg-gold-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.6)]"
+                className="absolute top-0 h-1 w-2.5 rounded-full bg-[var(--accent)]"
                 initial={{ x: "-12px" }}
                 animate={{ x: ["0%", "100%"] }}
                 exit={{ opacity: 0 }}

@@ -68,7 +68,7 @@ export function AllocationsDialog({
   return (
     <Dialog open={open} onClose={onClose} title="改资产配置目标">
       <form onSubmit={onSubmit} className="space-y-4">
-        <p className="text-xs text-zinc-400">两者之和必须等于 100%（schema 强约束 ±1% 容忍）</p>
+        <p className="text-xs text-[var(--text-secondary)]">两者之和必须等于 100%（schema 强约束 ±1% 容忍）</p>
         <Field label="股票/ETF 占比 (%)">
           <input
             type="number"
@@ -92,10 +92,10 @@ export function AllocationsDialog({
             required
           />
         </Field>
-        <div className="rounded bg-zinc-950/60 border border-zinc-800 px-3 py-2 text-sm tabular-nums">
-          合计: <span className={total === "100" ? "text-green-400" : "text-amber-400"}>{total}%</span>
+        <div className="rounded bg-[var(--surface-base)]/60 border border-[var(--border-subtle)] px-3 py-2 text-sm tabular-nums">
+          合计: <span className={total === "100" ? "text-pos" : "text-warn"}>{total}%</span>
         </div>
-        {error && <p className="text-sm text-red-400">⚠ {error}</p>}
+        {error && <p className="text-sm text-neg">⚠ {error}</p>}
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="ghost" type="button" onClick={onClose} disabled={submitting}>
             取消

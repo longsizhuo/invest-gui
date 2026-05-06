@@ -7,41 +7,48 @@ import type { HoldingV2 } from "../lib/api-client";
  * - display_name + symbol + channel
  * - 持仓 units + unit_label（股/克/oz...）
  * - 均价 + 实时价 + 浮盈
- * - 追踪仓有 🔍 标记，不显示 P&L
- * - 行情陈旧时 ⚠ 标记
+ * - 追踪仓视觉降级（仅边框透明度变化），不显示 P&L
+ * - 行情陈旧时 stale 标记
+ *
+ * 颜色策略：kind 标签纯灰阶（kind 是结构信息不是状态，不该用颜色）；
+ * 涨跌 / 浮盈用 pos/neg 语义色；陈旧用 stale。
  */
 export function HoldingCard({ h }: { h: HoldingV2 }) {
   const isTracking = h.is_tracking_only;
-  const ringColor = isTracking
-    ? "ring-zinc-700"
-    : (h.kind === "metal" ? "ring-gold-500/30"
-      : h.kind === "crypto" ? "ring-orange-500/30"
-      : "ring-blue-500/30");
-  const accent =
-    h.pnl == null ? "text-zinc-300"
-    : h.pnl >= 0 ? "text-green-400 font-semibold"
-    : "text-red-400 font-semibold";
+  const borderClass = isTracking
+    ? "border border-dashed border-[var(--border-subtle)]"
+    : "border border-[var(--border-subtle)]";
+
+  const pnlClass =
+    h.pnl == null
+      ? "text-[var(--text-primary)]"
+      : h.pnl >= 0
+      ? "text-pos font-medium"
+      : "text-neg font-medium";
 
   return (
-    <div className={`rounded-lg bg-zinc-900 p-4 ring-1 ${ringColor}`}>
-      <div className="flex items-baseline justify-between mb-3">
-        <div>
-          <h3 className="text-sm font-semibold text-zinc-200">
-            {isTracking && <span className="mr-1">🔍</span>}
+    <article className={`bg-[var(--surface-raised)] p-5 ${borderClass}`}>
+      <header className="flex items-start justify-between gap-3 mb-4">
+        <div className="min-w-0">
+          <h3 className="text-sm font-medium text-[var(--text-primary)] truncate">
             {h.display_name ?? h.symbol}
           </h3>
-          <div className="text-xs text-zinc-500 font-mono">
+          <div className="text-xs text-[var(--text-tertiary)] font-mono mt-0.5 truncate">
             {h.symbol}
             {h.channel && <span className="ml-2">· {h.channel}</span>}
+            {isTracking && <span className="ml-2 italic">追踪</span>}
           </div>
         </div>
         <KindBadge kind={h.kind} />
-      </div>
+      </header>
 
       <div className="space-y-1.5 tabular-nums text-sm">
         <Row label="持仓" value={`${h.units} ${h.unit_label}`} />
         {h.avg_cost > 0 && (
-          <Row label="均价" value={`${formatNum(h.avg_cost)} ${h.cost_currency}/${h.unit_label}`} />
+          <Row
+            label="均价"
+            value={`${formatNum(h.avg_cost)} ${h.cost_currency}/${h.unit_label}`}
+          />
         )}
         {h.quote && (
           <>
@@ -49,20 +56,24 @@ export function HoldingCard({ h }: { h: HoldingV2 }) {
               label="实时价"
               value={
                 <>
-                  {formatNum(h.quote.price ?? 0)} {h.quote.currency}/{h.quote.unit ?? h.unit_label}
-                  {h.quote.is_stale && <span className="ml-1 text-xs text-amber-400">⚠ 陈旧</span>}
+                  {formatNum(h.quote.price ?? 0)} {h.quote.currency}/
+                  {h.quote.unit ?? h.unit_label}
+                  {h.quote.is_stale && (
+                    <span className="ml-1.5 text-xs text-stale italic">陈旧</span>
+                  )}
                 </>
               }
             />
             {(() => {
-              // OpenAPI 通用 extra 字段在 TS 里是 {}，需要 as 断言成具体类型
-              const dayChange = (h.quote.extra as { day_change_pct?: number } | null | undefined)?.day_change_pct;
+              const dayChange = (
+                h.quote.extra as { day_change_pct?: number } | null | undefined
+              )?.day_change_pct;
               if (dayChange == null) return null;
               return (
                 <Row
                   label="日变化"
                   value={formatPct(dayChange)}
-                  valueClass={dayChange >= 0 ? "text-green-400" : "text-red-400"}
+                  valueClass={dayChange >= 0 ? "text-pos" : "text-neg"}
                 />
               );
             })()}
@@ -72,32 +83,32 @@ export function HoldingCard({ h }: { h: HoldingV2 }) {
           </>
         )}
         {!isTracking && h.market_value != null && (
-          <Row label="市值" value={`${formatNum(h.market_value)} ${h.cost_currency}`} />
+          <Row
+            label="市值"
+            value={`${formatNum(h.market_value)} ${h.cost_currency}`}
+          />
         )}
         {!isTracking && h.pnl != null && (
           <Row
             label="浮盈"
             value={`${h.pnl >= 0 ? "+" : ""}${formatNum(h.pnl)} ${h.cost_currency}`}
-            valueClass={accent}
+            valueClass={pnlClass}
           />
         )}
       </div>
-    </div>
+    </article>
   );
 }
 
+/** kind 标签：纯灰阶，结构信息不应用颜色 */
 function KindBadge({ kind }: { kind: string }) {
-  const colors: Record<string, string> = {
-    equity: "bg-blue-500/20 text-blue-300 ring-blue-500/30",
-    etf: "bg-blue-500/20 text-blue-300 ring-blue-500/30",
-    metal: "bg-gold-500/20 text-gold-400 ring-gold-500/30",
-    crypto: "bg-orange-500/20 text-orange-300 ring-orange-500/30",
-    bond: "bg-emerald-500/20 text-emerald-300 ring-emerald-500/30",
-    fund: "bg-purple-500/20 text-purple-300 ring-purple-500/30",
-    other: "bg-zinc-700/40 text-zinc-300 ring-zinc-600",
-  };
   return (
-    <span className={`rounded px-2 py-0.5 text-xs ring-1 ${colors[kind] ?? colors.other}`}>
+    <span
+      className={
+        "px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider " +
+        "border border-[var(--border-subtle)] text-[var(--text-tertiary)]"
+      }
+    >
       {kind}
     </span>
   );
@@ -113,15 +124,27 @@ function Row({
   valueClass?: string;
 }) {
   return (
-    <div className="flex items-baseline justify-between">
-      <span className="text-xs text-zinc-500">{label}</span>
-      <span className={valueClass ?? "text-zinc-100"}>{value}</span>
+    <div className="flex items-baseline justify-between gap-3">
+      <span className="text-xs text-[var(--text-tertiary)] shrink-0">
+        {label}
+      </span>
+      <span
+        className={
+          "font-mono text-right " +
+          (valueClass ?? "text-[var(--text-primary)]")
+        }
+      >
+        {value}
+      </span>
     </div>
   );
 }
 
 function formatNum(n: number): string {
-  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  });
 }
 
 function formatPct(pct: number): string {

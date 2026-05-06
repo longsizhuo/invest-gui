@@ -2,13 +2,12 @@
  * 多币种现金卡（v2 通用化）
  *
  * 显示：
- * - 主币种 CNY 大字（如果有）
- * - 其他币种小字平铺
+ * - CNY 排首；其他币种按字母序
  * - 0 余额币种依然显示（让用户知道账户存在）
+ * - 负数走 neg 语义色（应该不该出现，做防御）
  */
 export function CashSummaryCard({ cash }: { cash: Record<string, number> }) {
   const entries = Object.entries(cash).sort(([a], [b]) => {
-    // CNY 总是排第一
     if (a === "CNY") return -1;
     if (b === "CNY") return 1;
     return a.localeCompare(b);
@@ -16,21 +15,34 @@ export function CashSummaryCard({ cash }: { cash: Record<string, number> }) {
 
   if (entries.length === 0) {
     return (
-      <div className="rounded-lg bg-zinc-900 p-4 ring-1 ring-zinc-700">
-        <h3 className="text-sm font-semibold text-zinc-300 mb-3">现金</h3>
-        <p className="text-zinc-500 text-sm">（暂无现金记录）</p>
-      </div>
+      <article className="bg-[var(--surface-raised)] p-5 border border-[var(--border-subtle)]">
+        <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4">
+          现金
+        </h3>
+        <p className="text-[var(--text-tertiary)] text-sm">暂无现金记录</p>
+      </article>
     );
   }
 
   return (
-    <div className="rounded-lg bg-zinc-900 p-4 ring-1 ring-blue-500/30">
-      <h3 className="text-sm font-semibold text-zinc-300 mb-3">现金</h3>
-      <div className="space-y-2 tabular-nums">
+    <article className="bg-[var(--surface-raised)] p-5 border border-[var(--border-subtle)]">
+      <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4">
+        现金
+      </h3>
+      <div className="space-y-2.5 tabular-nums">
         {entries.map(([ccy, amt]) => (
-          <div key={ccy} className="flex items-baseline justify-between">
-            <span className="text-xs text-zinc-500 font-mono">{ccy}</span>
-            <span className={`text-base ${amt < 0 ? "text-red-400 font-semibold" : "text-zinc-100"}`}>
+          <div key={ccy} className="flex items-baseline justify-between gap-3">
+            <span className="text-xs text-[var(--text-tertiary)] font-mono uppercase tracking-wider">
+              {ccy}
+            </span>
+            <span
+              className={
+                "font-mono text-base " +
+                (amt < 0
+                  ? "text-neg font-medium"
+                  : "text-[var(--text-primary)]")
+              }
+            >
               {amt < 0 && "-"}
               {Math.abs(amt).toLocaleString("en-US", {
                 minimumFractionDigits: 2,
@@ -40,6 +52,6 @@ export function CashSummaryCard({ cash }: { cash: Record<string, number> }) {
           </div>
         ))}
       </div>
-    </div>
+    </article>
   );
 }

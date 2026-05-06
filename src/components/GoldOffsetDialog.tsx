@@ -51,7 +51,7 @@ export function GoldOffsetDialog({
   return (
     <Dialog open={open} onClose={onClose} title="报浙商克价 → 反推点差">
       <form onSubmit={onSubmit} className="space-y-4">
-        <p className="text-xs text-zinc-400">
+        <p className="text-xs text-[var(--text-secondary)]">
           输入浙商当日显示的克价，后端用 yfinance 实时金价反推 offset，写回 strategy.md。
           系统自动学习浙商溢价，不用手动维护。
         </p>
@@ -69,8 +69,8 @@ export function GoldOffsetDialog({
             required
           />
         </Field>
-        {error && <p className="text-sm text-red-400">⚠ {error}</p>}
-        {success && <p className="text-sm text-green-400">✓ {success}</p>}
+        {error && <p className="text-sm text-neg">⚠ {error}</p>}
+        {success && <p className="text-sm text-pos">✓ {success}</p>}
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="ghost" type="button" onClick={onClose} disabled={submitting}>
             关闭

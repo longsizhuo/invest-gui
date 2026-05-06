@@ -63,7 +63,7 @@ export function SymbolSearch({
     <div className="relative">
       <input
         type="text"
-        className="w-full bg-zinc-950 border border-zinc-700 focus:border-gold-500 focus:ring-1 focus:ring-gold-500 rounded px-3 py-2 text-sm tabular-nums outline-none transition"
+        className="w-full bg-[var(--surface-base)] border border-[var(--border-strong)] focus:border-[var(--accent)] focus:outline-none px-3 py-2 text-sm tabular-nums font-mono transition-colors duration-100"
         value={value}
         onChange={(e) => {
           onChange(e.target.value);
@@ -80,12 +80,12 @@ export function SymbolSearch({
         autoComplete="off"
       />
       {open && (results.length > 0 || loading) && (
-        <ul className="absolute z-10 mt-1 w-full bg-zinc-900 border border-zinc-700 rounded shadow-lg max-h-60 overflow-auto">
+        <ul className="absolute z-10 mt-1 w-full bg-[var(--surface-raised)] border border-[var(--border-strong)] rounded shadow-lg max-h-60 overflow-auto">
           {loading && (
-            <li className="px-3 py-2 text-sm text-zinc-500">搜索中...</li>
+            <li className="px-3 py-2 text-sm text-[var(--text-tertiary)]">搜索中...</li>
           )}
           {!loading && results.length === 0 && (
-            <li className="px-3 py-2 text-sm text-zinc-500">无匹配；可直接输入完整 symbol</li>
+            <li className="px-3 py-2 text-sm text-[var(--text-tertiary)]">无匹配；可直接输入完整 symbol</li>
           )}
           {results.map((r) => (
             <li
@@ -96,13 +96,13 @@ export function SymbolSearch({
                 if (blurTimer.current) clearTimeout(blurTimer.current);
                 pick(r);
               }}
-              className="px-3 py-2 text-sm cursor-pointer hover:bg-zinc-800 border-b border-zinc-800 last:border-b-0"
+              className="px-3 py-2 text-sm cursor-pointer hover:bg-[var(--surface-overlay)] border-b border-[var(--border-subtle)] last:border-b-0"
             >
               <div className="flex items-baseline justify-between">
-                <span className="font-mono text-gold-400">{r.symbol}</span>
-                <span className="text-xs text-zinc-500">{r.exchange ?? ""} · {r.quote_type ?? ""}</span>
+                <span className="font-mono text-[var(--accent)]">{r.symbol}</span>
+                <span className="text-xs text-[var(--text-tertiary)]">{r.exchange ?? ""} · {r.quote_type ?? ""}</span>
               </div>
-              <div className="text-xs text-zinc-400 truncate">
+              <div className="text-xs text-[var(--text-secondary)] truncate">
                 {r.shortname ?? r.longname ?? ""}
               </div>
             </li>

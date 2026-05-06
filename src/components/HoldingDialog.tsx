@@ -237,12 +237,12 @@ export function HoldingDialog({
             type="checkbox" checked={isTracking}
             onChange={(e) => setIsTracking(e.target.checked)}
           />
-          <span className="text-sm text-zinc-300">
+          <span className="text-sm text-[var(--text-primary)]">
             🔍 追踪仓（仅观察，不计 P&L；适合先看看再买）
           </span>
         </label>
 
-        {error && <p className="text-sm text-red-400">⚠ {error}</p>}
+        {error && <p className="text-sm text-neg">⚠ {error}</p>}
 
         <div className="flex justify-between items-center pt-3">
           <div>

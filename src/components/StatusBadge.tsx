@@ -1,35 +1,38 @@
 /**
- * 通用状态徽章 - 5 种 verdict + 通用 label。
- * 供命中率页、委员会库页、SSE 直播复用，避免每处都写颜色映射
+ * 通用状态徽章 — 三类
+ *
+ * - VerdictBadge: BUY/SELL 是真语义（涨跌方向），用 pos/neg；HOLD/TRIM 中性
+ * - RoleBadge: macro/quant/risk/cio —— 角色是结构信息，纯灰阶 + 等宽字
+ * - StatusBadge: queued/running/done/error 是状态，用 warn/pos/neg
+ *
+ * 颜色判断的原则：
+ *   能映射到"涨/跌"或"成/败"的才用色；纯标签分类用 mono + 边框
  */
 const VERDICT_COLORS: Record<string, string> = {
-  BUY: "bg-green-500/20 text-green-300 ring-green-500/30",
-  ACCUMULATE: "bg-green-500/20 text-green-300 ring-green-500/30",
-  HOLD: "bg-zinc-700/40 text-zinc-300 ring-zinc-600",
-  TRIM: "bg-orange-500/20 text-orange-300 ring-orange-500/30",
-  SELL: "bg-red-500/20 text-red-300 ring-red-500/30",
-};
-
-const ROLE_COLORS: Record<string, string> = {
-  macro: "bg-purple-500/20 text-purple-300 ring-purple-500/30",
-  quant: "bg-blue-500/20 text-blue-300 ring-blue-500/30",
-  risk: "bg-orange-500/20 text-orange-300 ring-orange-500/30",
-  cio: "bg-gold-500/20 text-gold-300 ring-gold-500/30",
+  BUY: "chip-pos border border-[var(--pos)]",
+  ACCUMULATE: "chip-pos border border-[var(--pos)]",
+  HOLD: "border border-[var(--border-strong)] text-[var(--text-secondary)]",
+  TRIM: "chip-warn border border-[var(--warn)]",
+  SELL: "chip-neg border border-[var(--neg)]",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  queued: "bg-blue-500/20 text-blue-300 ring-blue-500/30",
-  running: "bg-amber-500/20 text-amber-300 ring-amber-500/30",
-  done: "bg-green-500/20 text-green-300 ring-green-500/30",
-  error: "bg-red-500/20 text-red-300 ring-red-500/30",
+  queued: "border border-[var(--border-strong)] text-[var(--text-secondary)]",
+  running: "chip-warn border border-[var(--warn)]",
+  done: "chip-pos border border-[var(--pos)]",
+  error: "chip-neg border border-[var(--neg)]",
 };
 
-const FALLBACK = "bg-zinc-700/40 text-zinc-300 ring-zinc-600";
+const FALLBACK =
+  "border border-[var(--border-subtle)] text-[var(--text-tertiary)]";
+
+const BADGE_BASE =
+  "inline-flex items-center px-2 py-0.5 text-[11px] font-mono uppercase tracking-wider";
 
 export function VerdictBadge({ verdict }: { verdict: string | null | undefined }) {
-  if (!verdict) return <span className="text-zinc-500">—</span>;
+  if (!verdict) return <span className="text-[var(--text-tertiary)]">—</span>;
   return (
-    <span className={`rounded px-1.5 py-0.5 text-xs ring-1 ${VERDICT_COLORS[verdict] ?? FALLBACK}`}>
+    <span className={`${BADGE_BASE} ${VERDICT_COLORS[verdict] ?? FALLBACK}`}>
       {verdict}
     </span>
   );
@@ -37,7 +40,11 @@ export function VerdictBadge({ verdict }: { verdict: string | null | undefined }
 
 export function RoleBadge({ role }: { role: string }) {
   return (
-    <span className={`rounded px-1.5 py-0.5 text-xs ring-1 font-mono ${ROLE_COLORS[role] ?? FALLBACK}`}>
+    <span
+      className={
+        `${BADGE_BASE} border border-[var(--border-subtle)] text-[var(--text-secondary)]`
+      }
+    >
       {role}
     </span>
   );
@@ -45,7 +52,7 @@ export function RoleBadge({ role }: { role: string }) {
 
 export function StatusBadge({ status }: { status: string }) {
   return (
-    <span className={`rounded px-1.5 py-0.5 text-xs ring-1 ${STATUS_COLORS[status] ?? FALLBACK}`}>
+    <span className={`${BADGE_BASE} ${STATUS_COLORS[status] ?? FALLBACK}`}>
       {status}
     </span>
   );

@@ -85,7 +85,7 @@ export function CashDialog({
             required
           />
         </Field>
-        {error && <p className="text-sm text-red-400">⚠ {error}</p>}
+        {error && <p className="text-sm text-neg">⚠ {error}</p>}
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="ghost" type="button" onClick={onClose} disabled={submitting}>
             取消

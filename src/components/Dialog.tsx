@@ -38,23 +38,37 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      className="rounded-lg bg-zinc-900 text-zinc-100 ring-1 ring-zinc-700 p-0 backdrop:bg-black/60 max-w-md w-full"
+      className={
+        "bg-[var(--surface-raised)] text-[var(--text-primary)] " +
+        "border border-[var(--border-strong)] p-0 " +
+        "backdrop:bg-black/70 backdrop:backdrop-blur-sm " +
+        "max-w-md w-full"
+      }
       // 点击 backdrop 关闭
       onClick={(e) => {
         if (e.target === ref.current) onClose();
       }}
     >
-      <div className="px-5 py-3 border-b border-zinc-800 flex items-center justify-between">
-        <h2 className="font-semibold">{title}</h2>
+      <header
+        className={
+          "px-5 py-4 border-b border-[var(--border-subtle)] " +
+          "flex items-center justify-between gap-3"
+        }
+      >
+        <h2 className="text-base font-medium">{title}</h2>
         <button
           type="button"
           onClick={onClose}
-          className="text-zinc-500 hover:text-zinc-200 text-xl leading-none"
+          className={
+            "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] " +
+            "text-2xl leading-none w-8 h-8 flex items-center justify-center " +
+            "transition-colors duration-100"
+          }
           aria-label="关闭"
         >
           ×
         </button>
-      </div>
+      </header>
       <div className="p-5">{children}</div>
     </dialog>
   );
