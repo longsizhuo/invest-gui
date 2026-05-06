@@ -1,0 +1,85 @@
+name: Release dist tarball
+
+# 每次 push main 时构建 dist 并发到 GitHub Releases 的 dist-latest tag。
+# 后端 invest 项目的 scripts/sync_gui_dist.py 会拉这个 release 的 tarball。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "index.html"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "vite.config.ts"
+      - "tailwind.config.js"
+      - "postcss.config.js"
+      - "tsconfig*.json"
+      - ".github/workflows/release-dist.yml"
+  workflow_dispatch:    # 也支持手动触发
+
+permissions:
+  contents: write       # 创建/更新 release 需要
+
+concurrency:
+  group: release-dist
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Verify dist
+        run: |
+          test -f dist/index.html || { echo "❌ dist/index.html 缺失"; exit 1; }
+          ls -la dist/
+          du -sh dist/
+
+      - name: Create tarball
+        run: |
+          tar -czf invest-gui-dist.tar.gz -C dist .
+          ls -la invest-gui-dist.tar.gz
+
+      - name: Get short SHA
+        id: sha
+        run: echo "short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Delete previous dist-latest release if exists
+        run: |
+          gh release delete dist-latest --yes --cleanup-tag || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dist-latest
+          name: "GUI dist (latest, sha ${{ steps.sha.outputs.short }})"
+          body: |
+            invest-gui 构建产物，给后端 invest 项目通过 `scripts/sync_gui_dist.py` 拉取。
+
+            - commit: ${{ github.sha }}
+            - 构建时间: ${{ github.event.head_commit.timestamp }}
+
+            **不要手动下载用作长期版本** —— 此 release 每次 push main 都会被覆盖。
+            如需 pinned 版本，请用具体 commit sha 拉对应 dist。
+          files: invest-gui-dist.tar.gz
+          make_latest: "false"   # 不当 latest 干扰 source code release
