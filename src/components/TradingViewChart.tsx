@@ -14,14 +14,16 @@ function mapToTradingView(yfSymbol: string): string {
   const s = yfSymbol.trim();
 
   // 显式映射表（精确匹配）
+  // 期货合约（COMEX:GC1! 等）TradingView 需要付费订阅才能看实时数据，
+  // 改用现货/外汇代理（OANDA / TVC），免费用户可看且和 yfinance 期货价相关性 0.99+
   const exact: Record<string, string> = {
-    "GC=F": "COMEX:GC1!",         // COMEX 黄金连续合约
-    "SI=F": "COMEX:SI1!",         // COMEX 白银
-    "CL=F": "NYMEX:CL1!",         // 原油
-    "HG=F": "COMEX:HG1!",         // 铜
-    "ES=F": "CME_MINI:ES1!",      // 标普 500 期货
-    "NQ=F": "CME_MINI:NQ1!",      // 纳指 100 期货
-    "^VIX": "CBOE:VIX",
+    "GC=F": "OANDA:XAUUSD",        // 现货金 USD/oz（vs 期货 COMEX:GC1! 需付费）
+    "SI=F": "OANDA:XAGUSD",        // 现货银
+    "CL=F": "TVC:USOIL",           // WTI 原油（TVC 免费）
+    "HG=F": "TVC:COPPER",          // 铜
+    "ES=F": "SP:SPX",              // 标普 500 现货指数（vs ES1! 需付费）
+    "NQ=F": "NASDAQ:NDX",          // 纳指 100 现货指数（vs NQ1! 需付费）
+    "^VIX": "TVC:VIX",
     "^TNX": "TVC:US10Y",
     "^GSPC": "SP:SPX",
     "^IXIC": "NASDAQ:IXIC",
