@@ -1,3 +1,5 @@
+import { usePrivacy } from "../lib/privacy";
+
 /**
  * 多币种现金卡（v2 通用化）
  *
@@ -5,8 +7,11 @@
  * - CNY 排首；其他币种按字母序
  * - 0 余额币种依然显示（让用户知道账户存在）
  * - 负数走 neg 语义色（应该不该出现，做防御）
+ * - 隐私模式：金额脱敏成 ●●●●●（币种 label / 正负号保留）
  */
 export function CashSummaryCard({ cash }: { cash: Record<string, number> }) {
+  const { enabled: privacyOn } = usePrivacy();
+
   const entries = Object.entries(cash).sort(([a], [b]) => {
     if (a === "CNY") return -1;
     if (b === "CNY") return 1;
@@ -44,10 +49,12 @@ export function CashSummaryCard({ cash }: { cash: Record<string, number> }) {
               }
             >
               {amt < 0 && "-"}
-              {Math.abs(amt).toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+              {privacyOn
+                ? "●●●●●"
+                : Math.abs(amt).toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
             </span>
           </div>
         ))}

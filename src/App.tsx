@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { usePrivacy } from "./lib/privacy";
 
 /**
  * 顶层布局：导航栏 + 路由出口
@@ -80,6 +81,7 @@ export default function App() {
                 {item.label}
               </NavLink>
             ))}
+            <PrivacyToggle />
           </div>
         </nav>
       </header>
@@ -92,5 +94,50 @@ export default function App() {
         invest · connectors/web_api.py · Cloudflare Access
       </footer>
     </div>
+  );
+}
+
+/**
+ * 顶导隐私模式 toggle —— 公共场合一键脱敏所有金额
+ *
+ * 按钮设计意图：
+ * - 用 SVG 眼睛 icon 而不是 emoji，跨平台渲染一致 + 配合设计 token
+ * - 状态用 stroke 颜色和"slash 斜杠"区分（眼睛 / 闭眼 ✕）
+ * - hover 浅化背景；focus ring 走全局 :focus-visible token
+ */
+function PrivacyToggle() {
+  const { enabled, toggle } = usePrivacy();
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      title={enabled ? "显示金额（当前：脱敏中）" : "脱敏金额（公共场合用）"}
+      aria-label={enabled ? "显示金额" : "脱敏金额"}
+      aria-pressed={enabled}
+      className={
+        "inline-flex items-center justify-center w-8 h-8 " +
+        "border border-[var(--border-subtle)] " +
+        "transition-colors duration-100 " +
+        (enabled
+          ? "bg-[var(--surface-overlay)] text-[var(--text-primary)]"
+          : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-overlay)]")
+      }
+    >
+      {enabled ? (
+        // 闭眼：眼睛 + 斜杠
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+          <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+          <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+          <line x1="2" y1="2" x2="22" y2="22" />
+        </svg>
+      ) : (
+        // 睁眼
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      )}
+    </button>
   );
 }

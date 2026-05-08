@@ -1,6 +1,7 @@
 import useSWR from "swr";
 import { Link } from "react-router-dom";
 import { fetcher } from "../lib/api-client";
+import { usePrivacy } from "../lib/privacy";
 
 /**
  * Dashboard Hero landmark
@@ -49,11 +50,16 @@ export function DashboardHero() {
     fetcher,
     { refreshInterval: 60_000 },
   );
+  const { enabled: privacyOn } = usePrivacy();
 
   const ready = total != null;
   // 拉不到 → 全部 dash（不要用 0 假装"零资产"，会误导）
-  const renderAmount = (n: number | undefined) =>
-    ready && n != null ? `¥${formatCNY(n)}` : "¥—";
+  // 隐私模式下绝对金额脱敏成 ●●●（保留 ¥ 前缀让用户知道这是金额）
+  const renderAmount = (n: number | undefined) => {
+    if (!ready || n == null) return "¥—";
+    if (privacyOn) return "¥●●●●●";
+    return `¥${formatCNY(n)}`;
+  };
 
   return (
     <section

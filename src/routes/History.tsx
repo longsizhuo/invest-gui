@@ -2,9 +2,13 @@ import useSWR from "swr";
 import { useState } from "react";
 import { fetcher, type HistoryResponse } from "../lib/api-client";
 import { formatCNY, shortTime } from "../lib/format";
+import { usePrivacy } from "../lib/privacy";
+
+const MASK = "●●●●●";
 
 /** 交易流水：表格展示，按 symbol 过滤，最多显示 200 条 */
 export default function History() {
+  const { enabled: privacyOn } = usePrivacy();
   const [filter, setFilter] = useState<string>("");
   const { data, error, isLoading } = useSWR<HistoryResponse>("/api/history?limit=200", fetcher);
 
@@ -67,12 +71,14 @@ export default function History() {
                   <ActionBadge action={r.action} />
                 </td>
                 <td className="px-3 py-2 text-[var(--text-primary)]">{r.symbol ?? "—"}</td>
-                <td className="px-3 py-2 text-right text-[var(--text-primary)]">{r.units ?? "—"}</td>
                 <td className="px-3 py-2 text-right text-[var(--text-primary)]">
-                  {r.price_per_unit != null ? formatCNY(r.price_per_unit) : "—"}
+                  {privacyOn ? MASK : r.units ?? "—"}
                 </td>
                 <td className="px-3 py-2 text-right text-[var(--text-primary)]">
-                  {r.total_amount != null ? formatCNY(r.total_amount) : "—"}
+                  {r.price_per_unit == null ? "—" : privacyOn ? MASK : formatCNY(r.price_per_unit)}
+                </td>
+                <td className="px-3 py-2 text-right text-[var(--text-primary)]">
+                  {r.total_amount == null ? "—" : privacyOn ? MASK : formatCNY(r.total_amount)}
                 </td>
                 <td className="px-3 py-2 text-[var(--text-tertiary)] text-xs">{r.source ?? "—"}</td>
               </tr>

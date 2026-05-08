@@ -1,4 +1,7 @@
 import type { HoldingV2 } from "../lib/api-client";
+import { usePrivacy } from "../lib/privacy";
+
+const MASK = "●●●●●";
 
 /**
  * 单个 holding 通用卡片：自适应任意 yfinance symbol
@@ -12,8 +15,14 @@ import type { HoldingV2 } from "../lib/api-client";
  *
  * 颜色策略：kind 标签纯灰阶（kind 是结构信息不是状态，不该用颜色）；
  * 涨跌 / 浮盈用 pos/neg 语义色；陈旧用 stale。
+ *
+ * 隐私模式（"小眼睛"）：
+ * - 脱敏：units（持仓量）/ avg_cost（均价）/ market_value（市值）/ pnl（浮盈数值）
+ * - 保留：实时价 / day_change_pct / 行情日期 / chip 状态 / kind
+ *   理由：实时价是公开行情；百分比不暴露绝对金额；状态/kind 必要让用户识别哪张卡
  */
 export function HoldingCard({ h }: { h: HoldingV2 }) {
+  const { enabled: privacyOn } = usePrivacy();
   const isTracking = h.is_tracking_only;
   const borderClass = isTracking
     ? "border border-dashed border-[var(--border-subtle)]"
@@ -43,11 +52,18 @@ export function HoldingCard({ h }: { h: HoldingV2 }) {
       </header>
 
       <div className="space-y-1.5 tabular-nums text-sm">
-        <Row label="持仓" value={`${h.units} ${h.unit_label}`} />
+        <Row
+          label="持仓"
+          value={privacyOn ? `${MASK} ${h.unit_label}` : `${h.units} ${h.unit_label}`}
+        />
         {h.avg_cost > 0 && (
           <Row
             label="均价"
-            value={`${formatNum(h.avg_cost)} ${h.cost_currency}/${h.unit_label}`}
+            value={
+              privacyOn
+                ? `${MASK} ${h.cost_currency}/${h.unit_label}`
+                : `${formatNum(h.avg_cost)} ${h.cost_currency}/${h.unit_label}`
+            }
           />
         )}
         {h.quote && (
@@ -56,6 +72,7 @@ export function HoldingCard({ h }: { h: HoldingV2 }) {
               label="实时价"
               value={
                 <>
+                  {/* 实时价是公开行情，不脱敏 */}
                   {formatNum(h.quote.price ?? 0)} {h.quote.currency}/
                   {h.quote.unit ?? h.unit_label}
                   {h.quote.is_stale && (
@@ -85,13 +102,21 @@ export function HoldingCard({ h }: { h: HoldingV2 }) {
         {!isTracking && h.market_value != null && (
           <Row
             label="市值"
-            value={`${formatNum(h.market_value)} ${h.cost_currency}`}
+            value={
+              privacyOn
+                ? `${MASK} ${h.cost_currency}`
+                : `${formatNum(h.market_value)} ${h.cost_currency}`
+            }
           />
         )}
         {!isTracking && h.pnl != null && (
           <Row
             label="浮盈"
-            value={`${h.pnl >= 0 ? "+" : ""}${formatNum(h.pnl)} ${h.cost_currency}`}
+            value={
+              privacyOn
+                ? `${h.pnl >= 0 ? "+" : "-"}${MASK} ${h.cost_currency}`
+                : `${h.pnl >= 0 ? "+" : ""}${formatNum(h.pnl)} ${h.cost_currency}`
+            }
             valueClass={pnlClass}
           />
         )}
