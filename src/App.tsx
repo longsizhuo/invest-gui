@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { usePrivacy } from "./lib/privacy";
+import { useNudges } from "./lib/useNudges";
 
 /**
  * 顶层布局：导航栏 + 路由出口
@@ -38,9 +39,23 @@ const SECONDARY_NAV = [
   { to: "/system", label: "系统" },
 ];
 
+/**
+ * NudgesInit：只负责初始化 useNudges hook。
+ * 独立组件而非直接在 App 里调，是因为 useNudges 依赖 useToast，
+ * 后者要求处于 ToastProvider 树内。App 本身由 main.tsx 的 ToastProvider 包裹，
+ * 所以这里安全调用。
+ */
+function NudgesInit() {
+  useNudges();
+  return null;
+}
+
 export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-[var(--surface-base)]">
+      {/* 全局 nudge 初始化：轮询 reengagement + 首次拉 fresh insights */}
+      <NudgesInit />
+
       <header className="border-b border-[var(--border-subtle)]">
         <nav className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-8">
           {/* Wordmark：display serif，独立于导航；读 env 让 fork 实例能换品牌名 */}

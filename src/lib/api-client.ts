@@ -126,6 +126,69 @@ async function requestJSON<TRes>(
   return res.json() as Promise<TRes>;
 }
 
+// ─── P2 增长杠杆：手写类型（后端 OpenAPI schema 暂未暴露这三组 model） ────────
+
+/** GET /api/insights/fresh 返回的单条 insight */
+export interface FreshInsightItem {
+  /** insight 文件名（不含 .md） */
+  slug: string;
+  /** 一句话总结，供 toast 直接展示 */
+  title: string;
+  /** 历史命中率 0-1，可能为 null */
+  hit_rate: number | null;
+  /** 支持样本数，可能为 null */
+  sample_count: number | null;
+  /** 资产 symbol（如适用），可能为 null */
+  asset: string | null;
+  /** insight 文件 mtime ISO */
+  written_at: string;
+}
+
+export interface FreshInsightsResponse {
+  count: number;
+  items: FreshInsightItem[];
+}
+
+/** GET /api/reengagement 返回的单条 alert */
+export interface ReengagementAlert {
+  /** alert 类型：volatile | high_confidence_buy | stale_decision */
+  kind: "volatile" | "high_confidence_buy" | "stale_decision" | string;
+  /** 资产 symbol，可能为 null */
+  asset: string | null;
+  /** 给用户看的一句话 */
+  message: string;
+  /** 严重程度 */
+  severity: "info" | "warn" | "urgent";
+  /** 检测时间 ISO */
+  detected_at: string;
+}
+
+export interface ReengagementResponse {
+  count: number;
+  alerts: ReengagementAlert[];
+}
+
+/** GET /api/outperform_events 返回的单条事件 */
+export interface OutperformEvent {
+  /** snapshot 时间戳 ISO */
+  ts: string;
+  /** 基准名，如 余额宝 / 沪深300 */
+  benchmark: string;
+  /** openInvest 实盘累计涨幅 % */
+  user_pct: number;
+  /** 基准累计涨幅 % */
+  bench_pct: number;
+  /** 跑赢幅度 % (user - bench) */
+  diff_pct: number;
+  /** 拼好的可分享文案 */
+  label: string;
+}
+
+export interface OutperformEventsResponse {
+  count: number;
+  events: OutperformEvent[];
+}
+
 /** POST helper（PR 4 写操作用） */
 export async function postJSON<TReq, TRes>(url: string, body: TReq): Promise<TRes> {
   return requestJSON<TRes>("POST", url, body);

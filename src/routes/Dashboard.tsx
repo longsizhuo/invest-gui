@@ -11,6 +11,7 @@ import { HoldingDialog } from "../components/HoldingDialog";
 import { PnLChart } from "../components/PnLChart";
 import { TradingViewChart } from "../components/TradingViewChart";
 import { DashboardHero } from "../components/DashboardHero";
+import { OutperformShareCard } from "../components/OutperformShareCard";
 
 type DialogKind = null | "deposit" | "withdraw" | "gold_buy" | "gold_sell" | "gold_offset";
 
@@ -59,6 +60,9 @@ export default function Dashboard() {
 
   return (
     <div>
+      {/* 跑赢基准分享卡：有数据时显示在最顶部，高度 < 80px 不喧宾夺主 */}
+      <OutperformShareCard />
+
       {/* Hero landmark：总资产 + 上次委员会，进入页面第一眼看到的事实 */}
       <DashboardHero />
 

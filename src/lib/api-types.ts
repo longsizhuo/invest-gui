@@ -68,6 +68,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/portfolio/total_value": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Portfolio Total Value
+         * @description 所有现金 + 持仓 折算到指定币种的总市值
+         *
+         *     现金：用 cash dict + yfinance 汇率
+         *     持仓：用 quote.price * units，quote 是 cost_currency 计价，再用汇率折算
+         *     追踪仓不计入（is_tracking_only）
+         */
+        get: operations["get_portfolio_total_value_api_portfolio_total_value_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/holdings/{symbol}": {
         parameters: {
             query?: never;
@@ -392,6 +416,29 @@ export interface paths {
          * @description 查询委员会任务状态（pending → running → done/error）
          */
         get: operations["committee_status_api_committee__task_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/committee/{task_id}/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Committee Audit Meta
+         * @description 读取审计 trail（commit_hash / model / temperature / max_debate_rounds 等）
+         *
+         *     给合规 / 复盘用：监管来查"那天 verdict 是哪个 commit / 哪个 model 跑的"时一查就有。
+         *     Frontmatter 进 memory/.committee/<task_id>/meta.json，永不被 progress 覆盖。
+         */
+        get: operations["committee_audit_meta_api_committee__task_id__audit_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -841,6 +888,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/commsec/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Commsec Preview
+         * @description 预览 CommSec 邮件拉到的新成交（不写入）。GUI [Import] 按钮先调它
+         */
+        get: operations["commsec_preview_api_commsec_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/commsec/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Commsec Apply
+         * @description 实际写入 CommSec 拉到的成交到 portfolio + history.jsonl
+         *
+         *     GUI 弹确认窗 → 用户点 Confirm → 调本接口
+         */
+        post: operations["commsec_apply_api_commsec_apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1027,6 +1116,58 @@ export interface components {
             max_debate_rounds?: number | null;
         } & {
             [key: string]: unknown;
+        };
+        /** CommsecApplyRequest */
+        CommsecApplyRequest: {
+            /**
+             * Lookback Days
+             * @default 180
+             */
+            lookback_days: number;
+        };
+        /** CommsecApplyResponse */
+        CommsecApplyResponse: {
+            /**
+             * Ok
+             * @default true
+             */
+            ok: boolean;
+            /**
+             * Written
+             * @default 0
+             */
+            written: number;
+            /**
+             * Skipped
+             * @default 0
+             */
+            skipped: number;
+            /** Errors */
+            errors?: string[];
+        };
+        /**
+         * CommsecPreviewResponse
+         * @description GET /api/commsec/preview
+         */
+        CommsecPreviewResponse: {
+            /**
+             * Ok
+             * @default true
+             */
+            ok: boolean;
+            /** Lookback Days */
+            lookback_days: number;
+            /** New Trades */
+            new_trades?: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Skipped Count
+             * @default 0
+             */
+            skipped_count: number;
+            /** Error */
+            error?: string | null;
         };
         /**
          * DailyEntry
@@ -1801,6 +1942,46 @@ export interface components {
             /** Records */
             records: components["schemas"]["ToolCallRecord"][];
         };
+        /**
+         * TotalValueBreakdownItem
+         * @description 单项资产 / 现金 在折算币种下的金额
+         */
+        TotalValueBreakdownItem: {
+            /** Label */
+            label: string;
+            /** Kind */
+            kind: string;
+            /** Amount Local */
+            amount_local: number;
+            /** Currency Local */
+            currency_local: string;
+            /** Amount In Base */
+            amount_in_base?: number | null;
+            /** Fx Rate */
+            fx_rate?: number | null;
+            /** Note */
+            note?: string | null;
+        };
+        /**
+         * TotalValueResponse
+         * @description 完整资产折算到指定币种
+         */
+        TotalValueResponse: {
+            /** Base Currency */
+            base_currency: string;
+            /** Cash Total */
+            cash_total: number;
+            /** Holdings Total */
+            holdings_total: number;
+            /** Grand Total */
+            grand_total: number;
+            /** Breakdown */
+            breakdown: components["schemas"]["TotalValueBreakdownItem"][];
+            /** Fx Rates */
+            fx_rates: {
+                [key: string]: number | null;
+            };
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -2022,6 +2203,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HoldingV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_portfolio_total_value_api_portfolio_total_value_get: {
+        parameters: {
+            query?: {
+                /** @description 折算目标币种 */
+                base?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TotalValueResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2529,6 +2742,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CommitteeStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    committee_audit_meta_api_committee__task_id__audit_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -3167,6 +3413,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WriteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    commsec_preview_api_commsec_preview_get: {
+        parameters: {
+            query?: {
+                lookback_days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommsecPreviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    commsec_apply_api_commsec_apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommsecApplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommsecApplyResponse"];
                 };
             };
             /** @description Validation Error */
