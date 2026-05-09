@@ -48,3 +48,38 @@ export function durationBetween(
   const remSec = Math.round(sec - min * 60);
   return `${min}m ${remSec}s`;
 }
+
+/**
+ * verdict 翻成中文动作行
+ *
+ * 修 Tester 一票否决：英文缩写（TRIM/HOLD/SELL）扔在 UI 上没有解释，
+ * 用户答不出"AI 让我做什么"。翻成中文 + 金额数字 + 语义色。
+ *
+ * 用在 DashboardHero / HistoryTab 等多处。
+ */
+export type VerdictTone = "pos" | "neg" | "warn" | "neutral";
+
+export function verdictAction(
+  verdict: string | null | undefined,
+  allocCNY: number | null | undefined,
+): { action: string; tone: VerdictTone } {
+  if (!verdict) return { action: "—", tone: "neutral" };
+  const amount =
+    allocCNY != null && allocCNY !== 0
+      ? `¥${Math.abs(allocCNY).toLocaleString()}`
+      : "";
+  switch (verdict.toUpperCase()) {
+    case "BUY":
+      return { action: amount ? `建议买入 ${amount}` : "建议买入", tone: "pos" };
+    case "ACCUMULATE":
+      return { action: amount ? `分批加仓 ${amount}` : "分批加仓", tone: "pos" };
+    case "HOLD":
+      return { action: "维持不动", tone: "neutral" };
+    case "TRIM":
+      return { action: amount ? `建议减仓 ${amount}` : "建议减仓", tone: "warn" };
+    case "SELL":
+      return { action: amount ? `建议卖出 ${amount}` : "建议卖出", tone: "neg" };
+    default:
+      return { action: verdict, tone: "neutral" };
+  }
+}

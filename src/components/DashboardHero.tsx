@@ -2,6 +2,7 @@ import useSWR from "swr";
 import { Link } from "react-router-dom";
 import { fetcher } from "../lib/api-client";
 import { usePrivacy } from "../lib/privacy";
+import { verdictAction } from "../lib/format";
 
 /**
  * Dashboard Hero landmark
@@ -37,8 +38,10 @@ type CommitteeSessionsResp = {
     verdict?: string | null;
     confidence?: number | null;
     dominant_view?: string | null;
+    suggested_alloc_cny?: number | null;
   }>;
 };
+
 
 function formatCNY(n: number): string {
   return n.toLocaleString("zh-CN", { maximumFractionDigits: 0 });
@@ -156,16 +159,28 @@ function CommitteeMini() {
     );
   }
 
+  // F5: verdict 翻成中文动作行（Tester 一票否决：TRIM 没解释看不懂）
+  const { action, tone } = verdictAction(
+    latest.verdict,
+    latest.suggested_alloc_cny,
+  );
+  const toneClass = {
+    pos: "text-pos",
+    neg: "text-neg",
+    warn: "text-warn",
+    neutral: "text-[var(--text-primary)]",
+  }[tone];
+
   return (
     <div>
       <p className="text-xs text-[var(--text-tertiary)] uppercase tracking-widest mb-3">
-        上次委员会
+        AI 今日建议
       </p>
-      <p className="font-display text-2xl text-[var(--text-primary)] mb-1 italic">
-        {latest.verdict ?? "—"}
-      </p>
+      {/* 第一行：中文动作 + 金额，明显高亮 */}
+      <p className={`font-display text-2xl mb-1 ${toneClass}`}>{action}</p>
+      {/* 第二行：原始 verdict (TRIM 等) + 资产 + 日期 + 置信度 */}
       <p className="text-xs text-[var(--text-tertiary)] font-mono">
-        {latest.symbol} · {latest.date}
+        {latest.verdict ?? "—"} · {latest.symbol} · {latest.date}
         {latest.confidence != null &&
           ` · 置信 ${(latest.confidence * 100).toFixed(0)}%`}
       </p>

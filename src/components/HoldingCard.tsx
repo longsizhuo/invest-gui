@@ -54,7 +54,11 @@ export function HoldingCard({ h }: { h: HoldingV2 }) {
       <div className="space-y-1.5 tabular-nums text-sm">
         <Row
           label="持仓"
-          value={privacyOn ? `${MASK} ${h.unit_label}` : `${h.units} ${h.unit_label}`}
+          value={
+            privacyOn
+              ? `${MASK} ${h.unit_label}`
+              : `${formatUnits(h.units)} ${h.unit_label}`
+          }
         />
         {h.avg_cost > 0 && (
           <Row
@@ -168,6 +172,19 @@ function Row({
 function formatNum(n: number): string {
   return n.toLocaleString("en-US", {
     minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  });
+}
+
+/**
+ * 单位数显示：整数不带 .0 小数（256.0 → 256），有小数则保留 4 位有效精度
+ * 修 issue：用户反馈"256.0 股看着像 bug"
+ */
+function formatUnits(n: number): string {
+  if (Number.isInteger(n)) return n.toString();
+  // 黄金 g / 加密小数都需要保留精度
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: 0,
     maximumFractionDigits: 4,
   });
 }
