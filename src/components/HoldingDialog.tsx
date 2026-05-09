@@ -228,7 +228,7 @@ export function HoldingDialog({
           <input
             className={inputClass} value={channel}
             onChange={(e) => setChannel(e.target.value)}
-            placeholder="如 CommSec / 浙商银行"
+            placeholder="如 证券账户名称"
           />
         </Field>
 

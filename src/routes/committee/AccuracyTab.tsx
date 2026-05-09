@@ -30,9 +30,8 @@ export function AccuracyTab() {
     return (
       <div className="border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-6 text-center text-[var(--text-secondary)]">
         <p>暂无 verdict review 数据。</p>
-        <p className="text-xs mt-2">
-          需先跑 <code className="bg-[var(--surface-base)] px-1 rounded">jobs/verdict_review</code>
-          （脚本完整但默认无 cron，手动 <code>python -m jobs.verdict_review</code> 触发）
+        <p className="text-xs mt-2 text-[var(--text-tertiary)]">
+          历史命中率数据需积累一段时间后自动生成，无需手动操作。
         </p>
       </div>
     );

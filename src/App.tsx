@@ -43,13 +43,13 @@ export default function App() {
     <div className="min-h-screen flex flex-col bg-[var(--surface-base)]">
       <header className="border-b border-[var(--border-subtle)]">
         <nav className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-8">
-          {/* Wordmark：display serif，独立于导航 */}
+          {/* Wordmark：display serif，独立于导航；读 env 让 fork 实例能换品牌名 */}
           <NavLink
             to="/"
             end
             className="font-display text-lg tracking-display-tight text-[var(--text-primary)] mr-2"
           >
-            invest
+            {import.meta.env.VITE_INSTANCE_NAME ?? "openInvest"}
           </NavLink>
 
           {/* 核心导航 */}
@@ -91,7 +91,22 @@ export default function App() {
       </main>
 
       <footer className="border-t border-[var(--border-subtle)] px-6 py-4 text-xs text-[var(--text-tertiary)] text-center">
-        invest · connectors/web_api.py · Cloudflare Access
+        {/*
+          可配置实例名 + 上游链接 —— 让 fork 用户的部署看着是"自家实例"，
+          而不是"作者私人面板"。VITE_INSTANCE_NAME 在 .env 里设置。
+        */}
+        {import.meta.env.VITE_INSTANCE_NAME ?? "openInvest"} ·{" "}
+        <a
+          href={import.meta.env.VITE_GITHUB_REPO ?? "https://github.com/longsizhuo/openInvest"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 hover:text-[var(--text-secondary)]"
+        >
+          {/* 链接文字：取 repo URL 的 path 部分作为简短 slug */}
+          {(import.meta.env.VITE_GITHUB_REPO ?? "https://github.com/longsizhuo/openInvest")
+            .replace(/^https?:\/\/[^/]+\//, "")}
+        </a>{" "}
+        · MIT
       </footer>
     </div>
   );

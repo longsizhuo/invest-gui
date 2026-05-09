@@ -62,6 +62,16 @@
 | 长期模式 | Dreaming 沉淀的 insights |
 | Dreams | 短期记忆 + 候选池 |
 
+## 环境变量配置
+
+将 `.env.example` 复制为 `.env` 后按需修改：
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `VITE_INSTANCE_NAME` | `openInvest` | Navbar wordmark 和 footer 实例名；fork 部署时改成自己的名称，如 "我的投委会" |
+| `VITE_GITHUB_REPO` | `https://github.com/longsizhuo/openInvest` | Footer GitHub 链接；fork 后改成自己的仓库 URL |
+| `VITE_API_BASE` | （空，同源） | 后端 API 地址；生产 Caddy 同源反代时留空；本地跨域开发时填 `http://127.0.0.1:8765` |
+
 ## 本地开发
 
 需要 openInvest 后端在本机 8765 端口运行：

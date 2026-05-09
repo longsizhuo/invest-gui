@@ -89,9 +89,21 @@ export function DashboardHero() {
           </p>
 
           {error && (
-            <p className="text-xs text-neg mt-3 font-mono">
-              拉取失败：{error.message ?? "endpoint 可能未上线"}
-            </p>
+            <div className="text-xs text-[var(--text-secondary)] mt-3 border border-[var(--border-subtle)] px-3 py-2 inline-block">
+              <span className="text-neg font-mono">无法连接 API</span>
+              <span className="ml-2">
+                ——{" "}
+                <a
+                  href="https://github.com/longsizhuo/openInvest/blob/main/docs/QUICK_START.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-[var(--text-primary)]"
+                >
+                  部署文档
+                </a>
+                ；本地 dev：<code className="bg-[var(--surface-base)] px-1 mx-0.5">uv run uvicorn connectors.web_api:app --port 8765</code>
+              </span>
+            </div>
           )}
 
           <div className="mt-6 flex flex-wrap items-baseline gap-x-8 gap-y-2 text-sm font-mono tabular-nums">

@@ -10,7 +10,7 @@ import { Dialog } from "./Dialog";
 import { Field, inputClass } from "./Field";
 import { Button } from "./Button";
 
-/** 报当日浙商克价 → 后端反推点差，写回 strategy.md */
+/** 报当日买入克价 → 后端反推渠道点差，写回 strategy.md */
 export function GoldOffsetDialog({
   open,
   onClose,
@@ -49,13 +49,12 @@ export function GoldOffsetDialog({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title="报浙商克价 → 反推点差">
+    <Dialog open={open} onClose={onClose} title="校准黄金点差">
       <form onSubmit={onSubmit} className="space-y-4">
         <p className="text-xs text-[var(--text-secondary)]">
-          输入浙商当日显示的克价，后端用 yfinance 实时金价反推 offset，写回 strategy.md。
-          系统自动学习浙商溢价，不用手动维护。
+          输入今日实际买入克价，系统反推渠道溢价，写回 strategy.md 自动学习，无需手动维护。
         </p>
-        <Field label="浙商当日克价 (CNY/g)">
+        <Field label="当日买入克价 (CNY/g)">
           <input
             type="number"
             inputMode="decimal"

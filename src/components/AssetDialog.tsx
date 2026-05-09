@@ -151,7 +151,7 @@ export function AssetDialog({
             className={inputClass}
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="如 BetaShares Nasdaq 100 ETF"
+            placeholder="如 沪深300ETF"
           />
         </Field>
         <Field label="渠道">
@@ -160,7 +160,7 @@ export function AssetDialog({
             className={inputClass}
             value={channel}
             onChange={(e) => setChannel(e.target.value)}
-            placeholder="如 CommSec / 浙商积存金"
+            placeholder="如 证券账户名称"
           />
         </Field>
         <Field label="单次投资上限 (CNY)">

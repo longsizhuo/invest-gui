@@ -15,7 +15,7 @@ import { useLiveCommittee } from "../../lib/useLiveCommittee";
 import { Button } from "../../components/Button";
 import { VerdictBadge, RoleBadge } from "../../components/StatusBadge";
 import { parseCommitteeMd, type ParsedCommittee } from "../../lib/parseCommitteeMd";
-import { shortTime } from "../../lib/format";
+import { shortTime, labelPhase } from "../../lib/format";
 
 /**
  * 委员会 Pipeline 页 — 默认 Live 真跑模式
@@ -169,7 +169,13 @@ function LiveMode() {
             {status.events.map((e, i) => (
               <div key={i} className="text-xs font-mono text-[var(--text-secondary)] flex gap-2">
                 <span className="text-[var(--text-tertiary)]">{shortTime(e.ts as string)}</span>
-                <span className="text-[var(--accent)]">{e.phase as string}</span>
+                {/* phase 翻译：用 labelOf 把机器字符串转成中文，原始值 hover tooltip 保留 */}
+                <span
+                  className="text-[var(--accent)]"
+                  title={e.phase as string}
+                >
+                  {labelPhase(e.phase as string)}
+                </span>
                 {e.round != null && <span className="text-[var(--text-tertiary)]">round={e.round as number}</span>}
               </div>
             ))}
@@ -248,7 +254,14 @@ function RunForm({
       <p className="text-xs text-[var(--text-tertiary)] mt-3">
         Round 1 / Round 2..N 内部 Quant + Risk <strong className="text-[var(--text-primary)]">真并行</strong>；
         每轮检查收敛（连续 2 轮 SIGNAL/STRENGTH 不变）→ 提前退出；
-        预计耗时 {Math.ceil(maxRounds * 0.6 + 1)} 分钟（消耗 token ~¥{(maxRounds * 0.0008).toFixed(3)}）
+        预计耗时 {Math.ceil(maxRounds * 0.6 + 1)} 分钟
+        {/* token 成本仅在 hover tooltip 展示，避免吓到小白用户 */}
+        <span
+          title={`预估 LLM 费用 ~¥${(maxRounds * 0.0008).toFixed(3)}`}
+          className="ml-1 underline underline-offset-2 cursor-help"
+        >
+          (?)
+        </span>
       </p>
     </div>
   );
@@ -285,14 +298,14 @@ function VerdictResultCard({ status }: { status: { result?: unknown } }) {
           <VerdictBadge verdict={v?.verdict ?? null} />
         </div>
         <div>
-          <div className="text-xs text-[var(--text-tertiary)]">confidence</div>
+          <div className="text-xs text-[var(--text-tertiary)]">置信度</div>
           <div className="text-lg tabular-nums text-[var(--accent)] font-semibold">
             {v?.confidence != null ? v.confidence.toFixed(2) : "—"}
           </div>
         </div>
         {v?.dominant_view && (
           <div>
-            <div className="text-xs text-[var(--text-tertiary)]">dominant</div>
+            <div className="text-xs text-[var(--text-tertiary)]">主导角色</div>
             <RoleBadge role={v.dominant_view} />
           </div>
         )}

@@ -8,7 +8,7 @@ import {
   type PnLHistoryResponse,
   type RegimeResponse,
 } from "../lib/api-client";
-import { shortTime } from "../lib/format";
+import { shortTime, labelPhase } from "../lib/format";
 import { DataSourcesTab } from "./system/DataSourcesTab";
 
 /**
@@ -246,7 +246,13 @@ function DreamsTab() {
               {data.recent_events.map((e, i) => (
                 <tr key={i} className="border-t border-[var(--border-subtle)]">
                   <td className="px-2 py-1 text-[var(--text-tertiary)]">{shortTime(e.ts)}</td>
-                  <td className="px-2 py-1 text-[var(--text-primary)] font-mono">{e.phase}</td>
+                  {/* phase 翻译为中文，原始机器字符串保留在 title tooltip */}
+                  <td
+                    className="px-2 py-1 text-[var(--text-primary)] font-mono"
+                    title={String(e.phase)}
+                  >
+                    {labelPhase(String(e.phase))}
+                  </td>
                   <td className="px-2 py-1 text-[var(--text-secondary)]">{(e as { asset?: string }).asset ?? "—"}</td>
                   <td className="px-2 py-1">
                     {(e as { verdict?: string }).verdict ?? "—"}

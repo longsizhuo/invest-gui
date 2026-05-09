@@ -46,7 +46,7 @@ export function LiveTab() {
           <div className="min-w-0">
             <p className="text-sm text-[var(--text-primary)]">手动触发完整委员会</p>
             <p className="text-xs text-[var(--text-tertiary)] mt-1">
-              和 NapCat <code className="bg-[var(--surface-base)] px-1">/run</code>{" "}
+              和命令行 <code className="bg-[var(--surface-base)] px-1">/run</code>{" "}
               等效 · 多资产并行 + 收敛提前退出 · 通常 15-60 秒
             </p>
           </div>

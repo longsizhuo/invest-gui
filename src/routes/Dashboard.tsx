@@ -37,7 +37,15 @@ export default function Dashboard() {
     return <div className="text-[var(--text-secondary)]">加载持仓中…</div>;
   if (error)
     return (
-      <div className="text-[var(--neg)]">加载失败: {error.message}</div>
+      <div className="border border-[var(--neg)] bg-[var(--surface-raised)] p-6 space-y-2">
+        <p className="text-sm text-neg font-semibold">持仓加载失败</p>
+        <p className="text-xs text-[var(--text-secondary)]">{error.message}</p>
+        <p className="text-xs text-[var(--text-tertiary)]">
+          后端未启动？请先运行{" "}
+          <code className="bg-[var(--surface-base)] px-1">run.sh serve</code>
+          ，确认 <code className="bg-[var(--surface-base)] px-1">http://127.0.0.1:8765/api/health</code> 可访问。
+        </p>
+      </div>
     );
   if (!data) return null;
 
@@ -129,7 +137,7 @@ export default function Dashboard() {
             记卖金
           </Button>
           <Button variant="ghost" onClick={() => setDialog("gold_offset")}>
-            校准浙商点差
+            校准黄金点差
           </Button>
         </div>
         <p className="text-xs text-[var(--text-tertiary)] mt-3">

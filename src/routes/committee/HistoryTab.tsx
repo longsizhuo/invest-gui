@@ -27,7 +27,16 @@ export function HistoryTab() {
 
   if (isLoading)
     return <div className="text-[var(--text-secondary)]">加载中…</div>;
-  if (error) return <div className="text-neg">失败: {error.message}</div>;
+  if (error)
+    return (
+      <div className="border border-[var(--neg)] bg-[var(--surface-raised)] p-5 space-y-1">
+        <p className="text-sm text-neg font-semibold">历史决议加载失败</p>
+        <p className="text-xs text-[var(--text-secondary)]">{error.message}</p>
+        <p className="text-xs text-[var(--text-tertiary)]">
+          确认后端已启动（<code className="bg-[var(--surface-base)] px-1">run.sh serve</code>）且至少跑过一次委员会。
+        </p>
+      </div>
+    );
   if (!data) return null;
 
   return (
@@ -42,8 +51,8 @@ export function HistoryTab() {
               <tr>
                 <th className="px-2 py-1.5 text-left font-medium">日期</th>
                 <th className="px-2 py-1.5 text-left font-medium">资产</th>
-                <th className="px-2 py-1.5 text-left font-medium">verdict</th>
-                <th className="px-2 py-1.5 text-right font-medium">conf</th>
+                <th className="px-2 py-1.5 text-left font-medium">verdict（建议）</th>
+                <th className="px-2 py-1.5 text-right font-medium">置信度</th>
                 <th className="px-2 py-1.5 text-right font-medium">建议 ¥</th>
               </tr>
             </thead>
