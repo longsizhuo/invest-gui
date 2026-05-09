@@ -53,21 +53,46 @@ export function useNudges(): void {
 
 // ─── 内部 fetch 函数 ──────────────────────────────────────────────────────────
 
-/** 拉 /api/insights/fresh，每条新 insight 推一条 info toast */
+/**
+ * 拉 /api/insights/fresh，每条**没读过的** insight 推一条 info toast。
+ *
+ * 持久化"已弹过"的 slug 到 localStorage（key=insight slug → 弹出 ts）。Toast
+ * 自带的 5 分钟 TTL 跨 session 后失效会重弹，这里按 slug 锁住，**永不重弹同一
+ * 条 fresh insight**——避免 PM-1 v2 找出的 "用户每天开页面看到相同 'AI 学到
+ * 新模式' 通知" 问题。
+ */
+const FRESH_INSIGHT_STORAGE_KEY = "openinvest:nudged_fresh_insights";
+
 async function fetchFreshInsights(
   push: (message: string, severity?: ToastSeverity) => void,
 ): Promise<void> {
   try {
     const res = await fetch("/api/insights/fresh", { credentials: "same-origin" });
-    if (!res.ok) return; // 失败静默处理，不打扰用户
+    if (!res.ok) return;
     const data: FreshInsightsResponse = await res.json();
-    // 每条 insight 生成一条 toast，title 前加前缀
+
+    // 读已弹过的 slug 集合
+    let seen: Record<string, number> = {};
+    try {
+      seen = JSON.parse(localStorage.getItem(FRESH_INSIGHT_STORAGE_KEY) || "{}");
+    } catch {
+      seen = {};
+    }
+
+    let mutated = false;
     for (const item of data.items) {
+      // 同 slug 已弹过 → 跳过；新 slug 才弹 + 记录
+      if (item.slug in seen) continue;
       const msg = `AI 学到新模式：${item.title}`;
       push(msg, "info");
+      seen[item.slug] = Date.now();
+      mutated = true;
+    }
+    if (mutated) {
+      localStorage.setItem(FRESH_INSIGHT_STORAGE_KEY, JSON.stringify(seen));
     }
   } catch {
-    // 网络错误静默，不弹错误 toast
+    // 网络错误静默
   }
 }
 
