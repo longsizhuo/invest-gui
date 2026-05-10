@@ -4,6 +4,7 @@ import {
   type VerdictReviewSummary,
   type VerdictReviewReportResponse,
 } from "../../lib/api-client";
+import { SWR_KEYS } from "../../lib/swr-keys";
 import { VerdictBadge } from "../../components/StatusBadge";
 
 /**
@@ -16,11 +17,11 @@ import { VerdictBadge } from "../../components/StatusBadge";
  */
 export function AccuracyTab() {
   const { data: summary } = useSWR<VerdictReviewSummary>(
-    "/api/verdict_review/summary",
+    SWR_KEYS.VERDICT_REVIEW_SUMMARY,
     fetcher,
   );
   const { data: report } = useSWR<VerdictReviewReportResponse>(
-    "/api/verdict_review/report",
+    SWR_KEYS.VERDICT_REVIEW_REPORT,
     fetcher,
   );
 

@@ -10,6 +10,7 @@ import {
   type CommitteeSessionDetail,
   type Strategy,
 } from "../../lib/api-client";
+import { SWR_KEYS } from "../../lib/swr-keys";
 import { PipelineFlow, type AgentNode, type PipelineStage } from "../../components/PipelineFlow";
 import { useLiveCommittee } from "../../lib/useLiveCommittee";
 import { Button } from "../../components/Button";
@@ -89,7 +90,7 @@ function LiveMode() {
           try {
             // v3 合并端点：传 symbols 数组（单元素也行），后端按需并行
             const res = await postJSON<{ symbols: string[]; max_debate_rounds: number }, CommitteeRunResponse>(
-              "/api/committee/run",
+              SWR_KEYS.COMMITTEE_RUN,
               { symbols: [symbol], max_debate_rounds: maxRounds },
             );
             setTaskId(res.task_id);
@@ -204,7 +205,7 @@ function RunForm({
   const [symbol, setSymbol] = useState("");
   const [maxRounds, setMaxRounds] = useState(4);
 
-  const { data: strategy } = useSWR<Strategy>("/api/strategy", fetcher);
+  const { data: strategy } = useSWR<Strategy>(SWR_KEYS.STRATEGY, fetcher);
   const symbols = strategy?.target_assets.map((a) => a.symbol) ?? [];
 
   // 默认选第一个资产
@@ -341,8 +342,9 @@ function VerdictResultCard({ status }: { status: { result?: unknown } }) {
 // ============================================================
 
 function HistoryMode() {
+  // 历史模式拉最近 30 条（SWR_KEYS 中无专项 30 条常量，直接在 base 后拼 query）
   const { data: sessions } = useSWR<CommitteeSessionsResponse>(
-    "/api/committee_sessions?limit=30",
+    `${SWR_KEYS.COMMITTEE_SESSIONS_BASE}?limit=30`,
     fetcher,
   );
   const [selected, setSelected] = useState<{ date: string; symbol: string } | null>(null);
@@ -355,7 +357,7 @@ function HistoryMode() {
 
   const { data: detail } = useSWR<CommitteeSessionDetail>(
     selected
-      ? `/api/committee_sessions/${encodeURIComponent(selected.date)}/${encodeURIComponent(selected.symbol)}`
+      ? SWR_KEYS.committeeSessionDetail(selected.date, selected.symbol)
       : null,
     fetcher,
   );

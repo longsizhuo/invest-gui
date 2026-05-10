@@ -5,6 +5,7 @@ import {
   type Strategy as StrategyType,
   type TargetAsset,
 } from "../lib/api-client";
+import { SWR_KEYS } from "../lib/swr-keys";
 import { Card, Row } from "../components/Card";
 import { Button } from "../components/Button";
 import { AllocationsDialog } from "../components/AllocationsDialog";
@@ -13,7 +14,7 @@ import { formatCNY, formatPct } from "../lib/format";
 
 /** 策略页：目标比例 + 各资产 cap / 点差 / 费率 + 编辑入口 */
 export default function Strategy() {
-  const { data, error, isLoading } = useSWR<StrategyType>("/api/strategy", fetcher);
+  const { data, error, isLoading } = useSWR<StrategyType>(SWR_KEYS.STRATEGY, fetcher);
   const [allocOpen, setAllocOpen] = useState(false);
   const [assetMode, setAssetMode] = useState<null | { mode: "create" } | { mode: "edit"; asset: TargetAsset }>(null);
 

@@ -4,6 +4,7 @@ import {
   type LlmSummaryResponse,
   type LlmUsageResponse,
 } from "../../lib/api-client";
+import { SWR_KEYS } from "../../lib/swr-keys";
 import { RoleBadge } from "../../components/StatusBadge";
 import { shortTime } from "../../lib/format";
 
@@ -14,8 +15,8 @@ import { shortTime } from "../../lib/format";
  * 第一次访问可能为空（要等下次 daily_report 跑积累数据）
  */
 export function LlmUsageTab() {
-  const { data: summary } = useSWR<LlmSummaryResponse>("/api/llm/summary", fetcher);
-  const { data: usage } = useSWR<LlmUsageResponse>("/api/llm/usage?since=100", fetcher);
+  const { data: summary } = useSWR<LlmSummaryResponse>(SWR_KEYS.LLM_SUMMARY, fetcher);
+  const { data: usage } = useSWR<LlmUsageResponse>(SWR_KEYS.LLM_USAGE_100, fetcher);
 
   if (!summary) return <div className="text-[var(--text-secondary)]">加载中...</div>;
 

@@ -6,6 +6,7 @@ import {
   type GoldOffsetRequest,
   type WriteResponse,
 } from "../lib/api-client";
+import { SWR_KEYS } from "../lib/swr-keys";
 import { Dialog } from "./Dialog";
 import { Field, inputClass } from "./Field";
 import { Button } from "./Button";
@@ -33,11 +34,11 @@ export function GoldOffsetDialog({
     setSubmitting(true);
     try {
       const body: GoldOffsetRequest = { bank_price: p };
-      const res = await postJSON<GoldOffsetRequest, WriteResponse>("/api/gold/offset", body);
+      const res = await postJSON<GoldOffsetRequest, WriteResponse>(SWR_KEYS.GOLD_OFFSET, body);
       await Promise.all([
-        mutate("/api/strategy"),
-        mutate("/api/gold"),
-        mutate("/api/holdings"),
+        mutate(SWR_KEYS.STRATEGY),
+        mutate(SWR_KEYS.GOLD),
+        mutate(SWR_KEYS.HOLDINGS),
       ]);
       setSuccess(res.message);
       setBankPrice("");

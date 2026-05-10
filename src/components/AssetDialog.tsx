@@ -10,6 +10,7 @@ import {
   type TargetAssetCreate,
   type TargetAssetPatch,
 } from "../lib/api-client";
+import { SWR_KEYS } from "../lib/swr-keys";
 import { Dialog } from "./Dialog";
 import { Field, inputClass } from "./Field";
 import { Button } from "./Button";
@@ -86,7 +87,7 @@ export function AssetDialog({
           price_offset_pct: off,
           sell_fee_pct: fee,
         };
-        await postJSON<TargetAssetCreate, StrategyWriteResponse>("/api/strategy/asset", body);
+        await postJSON<TargetAssetCreate, StrategyWriteResponse>(SWR_KEYS.STRATEGY_ASSET, body);
       } else {
         const body: TargetAssetPatch = {
           display_name: displayName.trim() || null,
@@ -100,7 +101,7 @@ export function AssetDialog({
           body,
         );
       }
-      await mutate("/api/strategy");
+      await mutate(SWR_KEYS.STRATEGY);
       onClose();
     } catch (err) {
       setError(err instanceof ApiError ? err.detail : String(err));
@@ -118,7 +119,7 @@ export function AssetDialog({
       await deleteJSON<StrategyWriteResponse>(
         `/api/strategy/asset/${encodeURIComponent(asset.symbol)}`,
       );
-      await mutate("/api/strategy");
+      await mutate(SWR_KEYS.STRATEGY);
       onClose();
     } catch (err) {
       setError(err instanceof ApiError ? err.detail : String(err));

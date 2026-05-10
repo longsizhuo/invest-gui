@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { mutate } from "swr";
 import { ApiError, postJSON, type DepositRequest, type WriteResponse } from "../lib/api-client";
+import { SWR_KEYS } from "../lib/swr-keys";
 import { Dialog } from "./Dialog";
 import { Field, inputClass, selectClass } from "./Field";
 import { Button } from "./Button";
@@ -40,13 +41,13 @@ export function CashDialog({
     setSubmitting(true);
     try {
       const body: DepositRequest = { currency, amount: num };
-      const url = mode === "deposit" ? "/api/deposit" : "/api/withdraw";
+      const url = mode === "deposit" ? SWR_KEYS.DEPOSIT : SWR_KEYS.WITHDRAW;
       await postJSON<DepositRequest, WriteResponse>(url, body);
       // 写成功 → 让 Dashboard / 通用持仓 / History 立即重拉
       await Promise.all([
-        mutate("/api/portfolio"),
-        mutate("/api/holdings"),
-        mutate("/api/history?limit=200"),
+        mutate(SWR_KEYS.PORTFOLIO),
+        mutate(SWR_KEYS.HOLDINGS),
+        mutate(SWR_KEYS.HISTORY),
       ]);
       // 重置表单
       setAmount("");

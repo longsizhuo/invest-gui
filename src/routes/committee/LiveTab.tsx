@@ -7,6 +7,7 @@ import {
 import { Button } from "../../components/Button";
 import { StatusBadge } from "../../components/StatusBadge";
 import { useCommitteeLive } from "../../lib/useCommitteeLive";
+import { SWR_KEYS } from "../../lib/swr-keys";
 import { preciseTime, durationBetween } from "../../lib/format";
 
 /**
@@ -28,7 +29,7 @@ export function LiveTab() {
     setSubmitting(true);
     try {
       const res = await postJSON<{ note?: string }, CommitteeRunResponse>(
-        "/api/committee/run",
+        SWR_KEYS.COMMITTEE_RUN,
         { note: "via invest-gui" },
       );
       setTaskId(res.task_id);

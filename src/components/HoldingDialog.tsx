@@ -7,6 +7,7 @@ import {
   deleteJSON,
   type HoldingV2,
 } from "../lib/api-client";
+import { SWR_KEYS } from "../lib/swr-keys";
 import { Dialog } from "./Dialog";
 import { Field, inputClass, selectClass } from "./Field";
 import { Button } from "./Button";
@@ -108,13 +109,13 @@ export function HoldingDialog({
         is_tracking_only: isTracking,
       };
       if (mode === "create") {
-        await postJSON("/api/holdings", payload);
+        await postJSON(SWR_KEYS.HOLDINGS_POST, payload);
       } else {
         // 编辑：不能改 symbol
         const { symbol: _ignored, ...patch } = payload;
         await putJSON(`/api/holdings/${encodeURIComponent(symbol)}`, patch);
       }
-      await mutate("/api/holdings");
+      await mutate(SWR_KEYS.HOLDINGS);
       onClose();
     } catch (err) {
       setError(err instanceof ApiError ? err.detail : String(err));
@@ -130,7 +131,7 @@ export function HoldingDialog({
     setSubmitting(true);
     try {
       await deleteJSON(`/api/holdings/${encodeURIComponent(symbol)}`);
-      await mutate("/api/holdings");
+      await mutate(SWR_KEYS.HOLDINGS);
       onClose();
     } catch (err) {
       setError(err instanceof ApiError ? err.detail : String(err));

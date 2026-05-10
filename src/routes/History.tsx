@@ -1,6 +1,7 @@
 import useSWR from "swr";
 import { useState } from "react";
 import { fetcher, type HistoryResponse } from "../lib/api-client";
+import { SWR_KEYS } from "../lib/swr-keys";
 import { formatCNY, shortTime } from "../lib/format";
 import { usePrivacy } from "../lib/privacy";
 
@@ -10,7 +11,7 @@ const MASK = "●●●●●";
 export default function History() {
   const { enabled: privacyOn } = usePrivacy();
   const [filter, setFilter] = useState<string>("");
-  const { data, error, isLoading } = useSWR<HistoryResponse>("/api/history?limit=200", fetcher);
+  const { data, error, isLoading } = useSWR<HistoryResponse>(SWR_KEYS.HISTORY, fetcher);
 
   if (isLoading) return <div className="text-[var(--text-secondary)]">加载历史中...</div>;
   if (error) return <div className="text-neg">加载失败: {error.message}</div>;
@@ -21,7 +22,8 @@ export default function History() {
 
   return (
     <div className="space-y-4">
-      <header className="flex items-baseline justify-between">
+      {/* 移动端：标题和过滤器换行堆叠 */}
+      <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold mb-1">交易流水</h1>
           <p className="text-xs text-[var(--text-tertiary)]">最近 {data.count} 笔（按时间倒序）</p>
@@ -31,7 +33,7 @@ export default function History() {
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="bg-[var(--surface-raised)] border border-[var(--border-strong)] rounded px-2 py-1 text-sm"
+            className="bg-[var(--surface-raised)] border border-[var(--border-strong)] rounded px-2 py-1 text-sm max-w-[140px]"
           >
             <option value="">全部</option>
             {symbols.map((s) => (
@@ -43,8 +45,9 @@ export default function History() {
         </div>
       </header>
 
-      <div className="border border-[var(--border-subtle)] overflow-hidden">
-        <table className="w-full text-sm tabular-nums">
+      {/* overflow-x-auto：移动端横向滚动避免列溢出 */}
+      <div className="border border-[var(--border-subtle)] overflow-x-auto">
+        <table className="w-full text-sm tabular-nums min-w-[560px]">
           <thead className="bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs">
             <tr>
               <th className="px-3 py-2 text-left font-medium">时间</th>

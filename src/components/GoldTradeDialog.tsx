@@ -6,6 +6,7 @@ import {
   type GoldTradeRequest,
   type WriteResponse,
 } from "../lib/api-client";
+import { SWR_KEYS } from "../lib/swr-keys";
 import { Dialog } from "./Dialog";
 import { Field, inputClass } from "./Field";
 import { Button } from "./Button";
@@ -38,13 +39,13 @@ export function GoldTradeDialog({
     setSubmitting(true);
     try {
       const body: GoldTradeRequest = { grams: g, price_per_gram: p };
-      const url = mode === "buy" ? "/api/gold/buy" : "/api/gold/sell";
+      const url = mode === "buy" ? SWR_KEYS.GOLD_BUY : SWR_KEYS.GOLD_SELL;
       await postJSON<GoldTradeRequest, WriteResponse>(url, body);
       await Promise.all([
-        mutate("/api/portfolio"),
-        mutate("/api/holdings"),
-        mutate("/api/gold"),
-        mutate("/api/history?limit=200"),
+        mutate(SWR_KEYS.PORTFOLIO),
+        mutate(SWR_KEYS.HOLDINGS),
+        mutate(SWR_KEYS.GOLD),
+        mutate(SWR_KEYS.HISTORY),
       ]);
       setGrams("");
       setPrice("");

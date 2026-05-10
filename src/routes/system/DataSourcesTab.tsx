@@ -1,5 +1,6 @@
 import useSWR from "swr";
 import { fetcher, type DataSourcesHealthResponse } from "../../lib/api-client";
+import { SWR_KEYS } from "../../lib/swr-keys";
 import { shortTime } from "../../lib/format";
 
 /**
@@ -9,7 +10,7 @@ import { shortTime } from "../../lib/format";
  */
 export function DataSourcesTab() {
   const { data, error, isLoading } = useSWR<DataSourcesHealthResponse>(
-    "/api/data_sources/health",
+    SWR_KEYS.DATASOURCES_HEALTH,
     fetcher,
     { refreshInterval: 60_000 },
   );

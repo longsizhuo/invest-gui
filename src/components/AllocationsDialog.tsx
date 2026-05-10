@@ -6,6 +6,7 @@ import {
   type AllocationsRequest,
   type StrategyWriteResponse,
 } from "../lib/api-client";
+import { SWR_KEYS } from "../lib/swr-keys";
 import { Dialog } from "./Dialog";
 import { Field, inputClass } from "./Field";
 import { Button } from "./Button";
@@ -53,10 +54,10 @@ export function AllocationsDialog({
         target_allocation_cash: c / 100,
       };
       await putJSON<AllocationsRequest, StrategyWriteResponse>(
-        "/api/strategy/allocations",
+        SWR_KEYS.STRATEGY_ALLOCATIONS,
         body,
       );
-      await mutate("/api/strategy");
+      await mutate(SWR_KEYS.STRATEGY);
       onClose();
     } catch (err) {
       setError(err instanceof ApiError ? err.detail : String(err));

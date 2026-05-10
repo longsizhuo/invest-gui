@@ -5,6 +5,7 @@ import {
   type CommitteeSessionsResponse,
   type CommitteeSessionDetail,
 } from "../../lib/api-client";
+import { SWR_KEYS } from "../../lib/swr-keys";
 import { VerdictBadge } from "../../components/StatusBadge";
 import { verdictAction } from "../../lib/format";
 
@@ -20,7 +21,7 @@ import { verdictAction } from "../../lib/format";
  */
 export function HistoryTab() {
   const { data, error, isLoading } = useSWR<CommitteeSessionsResponse>(
-    "/api/committee_sessions?limit=100",
+    SWR_KEYS.COMMITTEE_SESSIONS_100,
     fetcher,
   );
   const [selected, setSelected] = useState<{ date: string; symbol: string } | null>(null);
@@ -129,7 +130,7 @@ export function HistoryTab() {
  */
 function CommitteeDetail({ date, symbol }: { date: string; symbol: string }) {
   const { data } = useSWR<CommitteeSessionDetail>(
-    `/api/committee_sessions/${encodeURIComponent(date)}/${encodeURIComponent(symbol)}`,
+    SWR_KEYS.committeeSessionDetail(date, symbol),
     fetcher,
   );
   if (!data)

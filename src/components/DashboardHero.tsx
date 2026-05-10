@@ -1,6 +1,7 @@
 import useSWR from "swr";
 import { Link } from "react-router-dom";
 import { fetcher } from "../lib/api-client";
+import { SWR_KEYS } from "../lib/swr-keys";
 import { usePrivacy } from "../lib/privacy";
 import { verdictAction } from "../lib/format";
 
@@ -49,7 +50,7 @@ function formatCNY(n: number): string {
 
 export function DashboardHero() {
   const { data: total, error } = useSWR<TotalValueResp>(
-    "/api/portfolio/total_value?base=CNY",
+    SWR_KEYS.PORTFOLIO_TOTAL_VALUE,
     fetcher,
     { refreshInterval: 60_000 },
   );
@@ -143,7 +144,7 @@ export function DashboardHero() {
 
 function CommitteeMini() {
   const { data } = useSWR<CommitteeSessionsResp>(
-    "/api/committee_sessions?limit=1",
+    SWR_KEYS.COMMITTEE_SESSIONS_LATEST,
     fetcher,
     { refreshInterval: 120_000 },
   );

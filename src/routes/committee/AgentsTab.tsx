@@ -1,5 +1,6 @@
 import useSWR from "swr";
 import { fetcher, type RegimeRulesResponse, type AgentPromptInfo } from "../../lib/api-client";
+import { SWR_KEYS } from "../../lib/swr-keys";
 import { RoleBadge } from "../../components/StatusBadge";
 
 /**
@@ -7,7 +8,7 @@ import { RoleBadge } from "../../components/StatusBadge";
  * 这是 marketing 主战场 — 让陌生人 30 秒看完知道"这个 AI 不是黑盒"
  */
 export function AgentsTab() {
-  const { data, error, isLoading } = useSWR<RegimeRulesResponse>("/api/regime_rules", fetcher);
+  const { data, error, isLoading } = useSWR<RegimeRulesResponse>(SWR_KEYS.REGIME_RULES, fetcher);
 
   if (isLoading) return <div className="text-[var(--text-secondary)]">加载规则...</div>;
   if (error) return <div className="text-neg">加载失败: {error.message}</div>;

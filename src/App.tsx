@@ -57,18 +57,24 @@ export default function App() {
       <NudgesInit />
 
       <header className="border-b border-[var(--border-subtle)]">
-        <nav className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-8">
-          {/* Wordmark：display serif，独立于导航；读 env 让 fork 实例能换品牌名 */}
+        {/*
+          移动端（375px）策略：
+          - Wordmark 独占第一行
+          - 导航链接 flex-wrap 换行，gap 收小到 gap-4
+          - 次级导航和隐私 toggle 跟在核心导航后，不再 ml-auto（会挤掉换行项）
+        */}
+        <nav className="max-w-6xl mx-auto px-4 sm:px-6 py-2 sm:py-0 sm:h-14 flex flex-wrap sm:flex-nowrap items-center gap-x-6 gap-y-2">
+          {/* Wordmark */}
           <NavLink
             to="/"
             end
-            className="font-display text-lg tracking-display-tight text-[var(--text-primary)] mr-2"
+            className="font-display text-lg tracking-display-tight text-[var(--text-primary)] shrink-0"
           >
             {import.meta.env.VITE_INSTANCE_NAME ?? "openInvest"}
           </NavLink>
 
-          {/* 核心导航 */}
-          <div className="flex items-center gap-6">
+          {/* 核心导航 —— flex-wrap 让移动端自然换行 */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             {PRIMARY_NAV.map((item) => (
               <NavLink
                 key={item.to}
@@ -83,8 +89,8 @@ export default function App() {
             ))}
           </div>
 
-          {/* 次级导航 —— 推到右边，视觉降级 */}
-          <div className="ml-auto flex items-center gap-5">
+          {/* 次级导航 + 隐私 toggle —— 移动端也展示，sm 以上推到右边 */}
+          <div className="flex items-center gap-4 sm:ml-auto">
             {SECONDARY_NAV.map((item) => (
               <NavLink
                 key={item.to}
