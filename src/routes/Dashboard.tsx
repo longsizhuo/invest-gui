@@ -1,6 +1,14 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import useSWR from "swr";
-import { fetcher, type HoldingsListResponse, type HoldingV2 } from "../lib/api-client";
+import {
+  fetcher,
+  type HoldingsListResponse,
+  type HoldingV2,
+  type CommitteeSessionSummary,
+  type CommitteeSessionsResponse,
+} from "../lib/api-client";
+import { SWR_KEYS } from "../lib/swr-keys";
 import { HoldingCard } from "../components/HoldingCard";
 import { CashSummaryCard } from "../components/CashSummaryCard";
 import { Button } from "../components/Button";
@@ -12,6 +20,9 @@ import { PnLChart } from "../components/PnLChart";
 import { TradingViewChart } from "../components/TradingViewChart";
 import { DashboardHero } from "../components/DashboardHero";
 import { OutperformShareCard } from "../components/OutperformShareCard";
+import { RecordModal } from "../components/RecordModal";
+import { VerdictBadge } from "../components/StatusBadge";
+import { verdictAction } from "../lib/format";
 
 type DialogKind = null | "deposit" | "withdraw" | "gold_buy" | "gold_sell" | "gold_offset";
 
@@ -27,9 +38,15 @@ export default function Dashboard() {
   const [holdingDialog, setHoldingDialog] = useState<
     null | { mode: "create" } | { mode: "edit"; holding: HoldingV2 }
   >(null);
+  // 记账 modal 状态：null = 关闭，否则携带预填数据
+  const [recordModal, setRecordModal] = useState<{
+    defaultSymbol?: string;
+    defaultDirection?: "BUY" | "SELL";
+    verdictId?: string;
+  } | null>(null);
   const close = () => setDialog(null);
 
-  const { data, error, isLoading } = useSWR<HoldingsListResponse>("/api/holdings", fetcher, {
+  const { data, error, isLoading } = useSWR<HoldingsListResponse>(SWR_KEYS.HOLDINGS, fetcher, {
     refreshInterval: 30_000,
     revalidateOnFocus: true,
   });
@@ -76,9 +93,15 @@ export default function Dashboard() {
             每 30 秒自动刷新 · 行情来自 yfinance
           </p>
         </div>
-        <Button onClick={() => setHoldingDialog({ mode: "create" })}>
-          新增资产
-        </Button>
+        <div className="flex gap-2">
+          {/* 批量导入历史交易入口 */}
+          <Link to="/holdings/import">
+            <Button variant="outline">批量导入</Button>
+          </Link>
+          <Button onClick={() => setHoldingDialog({ mode: "create" })}>
+            新增资产
+          </Button>
+        </div>
       </header>
 
       {/* 现金 + 实仓持仓 */}
@@ -186,6 +209,9 @@ export default function Dashboard() {
         </section>
       )}
 
+      {/* 最近委员会决议 —— 快速记账入口 */}
+      <RecentVerdicts onRecord={(opts) => setRecordModal(opts)} />
+
       {/* 对话框 */}
       <CashDialog mode="deposit" open={dialog === "deposit"} onClose={close} />
       <CashDialog mode="withdraw" open={dialog === "withdraw"} onClose={close} />
@@ -199,6 +225,127 @@ export default function Dashboard() {
         onClose={() => setHoldingDialog(null)}
         holding={holdingDialog?.mode === "edit" ? holdingDialog.holding : undefined}
       />
+
+      {/* 记账 modal */}
+      <RecordModal
+        open={recordModal !== null}
+        onClose={() => setRecordModal(null)}
+        defaultSymbol={recordModal?.defaultSymbol}
+        defaultDirection={recordModal?.defaultDirection}
+        verdictId={recordModal?.verdictId}
+      />
     </div>
+  );
+}
+
+// ─── 最近委员会决议卡片 ──────────────────────────────────────────────────────
+
+/**
+ * RecentVerdicts — 拉取最近 5 条委员会决议，每条旁边有"记一笔"按钮。
+ * 方向映射：BUY / ACCUMULATE → BUY；SELL / TRIM → SELL；HOLD → BUY（用户自己调）
+ */
+function RecentVerdicts({
+  onRecord,
+}: {
+  onRecord: (opts: {
+    defaultSymbol?: string;
+    defaultDirection?: "BUY" | "SELL";
+    verdictId?: string;
+  }) => void;
+}) {
+  const { data, isLoading } = useSWR<CommitteeSessionsResponse>(
+    SWR_KEYS.COMMITTEE_SESSIONS_5,
+    fetcher,
+    { refreshInterval: 120_000 },
+  );
+
+  if (isLoading || !data || data.count === 0) return null;
+
+  /**
+   * verdict 映射到方向：
+   * BUY / ACCUMULATE → BUY
+   * SELL / TRIM → SELL
+   * HOLD → 默认 BUY（用户可在 modal 里切换）
+   */
+  function toDirection(verdict?: string | null): "BUY" | "SELL" {
+    if (!verdict) return "BUY";
+    if (["SELL", "TRIM"].includes(verdict)) return "SELL";
+    return "BUY";
+  }
+
+  return (
+    <section className="mt-10 border-t border-[var(--border-subtle)] pt-6">
+      <header className="flex items-baseline justify-between mb-3">
+        <h2 className="text-xs uppercase tracking-widest text-[var(--text-tertiary)]">
+          最近决议 · 快速记账
+        </h2>
+        <p className="text-xs text-[var(--text-tertiary)]">
+          点"记一笔"写入内部账本，不连真实支付
+        </p>
+      </header>
+
+      {/* overflow-x-auto：移动端 375px 横向滚动避免表格溢出 */}
+      <div className="border border-[var(--border-subtle)] overflow-x-auto">
+        <table className="w-full text-sm tabular-nums min-w-[480px]">
+          <thead className="bg-[var(--surface-raised)] text-[var(--text-tertiary)] text-xs">
+            <tr>
+              <th className="px-3 py-2 text-left">日期</th>
+              <th className="px-3 py-2 text-left">资产</th>
+              <th className="px-3 py-2 text-left">决议</th>
+              <th className="px-3 py-2 text-right">置信度</th>
+              <th className="px-3 py-2 text-right">建议 ¥</th>
+              <th className="px-3 py-2 text-right"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.sessions.map((s: CommitteeSessionSummary, i: number) => {
+              const { action, tone } = verdictAction(s.verdict, s.suggested_alloc_cny);
+              const toneClass = {
+                pos: "text-pos",
+                neg: "text-neg",
+                warn: "text-warn",
+                neutral: "text-[var(--text-primary)]",
+              }[tone];
+
+              return (
+                <tr key={i} className="border-t border-[var(--border-subtle)] hover:bg-[var(--surface-raised)]/50">
+                  <td className="px-3 py-2 text-[var(--text-tertiary)] font-mono text-xs">
+                    {s.date}
+                  </td>
+                  <td className="px-3 py-2 font-mono text-[var(--text-primary)]">
+                    {s.symbol}
+                  </td>
+                  <td className="px-3 py-2">
+                    <VerdictBadge verdict={s.verdict ?? null} />
+                  </td>
+                  <td className="px-3 py-2 text-right text-[var(--text-secondary)] text-xs font-mono">
+                    {s.confidence != null ? `${(s.confidence * 100).toFixed(0)}%` : "—"}
+                  </td>
+                  <td className={`px-3 py-2 text-right text-xs font-mono ${toneClass}`}>
+                    {action}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        onRecord({
+                          defaultSymbol: s.symbol,
+                          defaultDirection: toDirection(s.verdict),
+                          // 后端决议 session 暂无 id 字段，用 date+symbol 拼
+                          verdictId: `${s.date}__${s.symbol}`,
+                        })
+                      }
+                    >
+                      记一笔
+                    </Button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }

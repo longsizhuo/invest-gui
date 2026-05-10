@@ -1,12 +1,10 @@
 /**
  * API client：fetch 包装 + SWR fetcher
  *
- * 部署假设：前端和后端同源（生产 Caddy 反代 /api/* → 127.0.0.1:8765；
- * 开发 Vite proxy 同效）。所以这里直接用相对路径，不带 host。
- *
- * 鉴权：CF Access cookie 由浏览器自动带（同域），代码无需关心。
+ * 同源调用 —— 前后端走相对路径 `/api/...`，不带 host。用户怎么部署不归 GUI 管。
  */
 import type { components } from "./api-types";
+import { SWR_KEYS } from "./swr-keys";
 
 export type Portfolio = components["schemas"]["PortfolioResponse"];
 export type Strategy = components["schemas"]["StrategyResponse"];
@@ -187,6 +185,95 @@ export interface OutperformEvent {
 export interface OutperformEventsResponse {
   count: number;
   events: OutperformEvent[];
+}
+
+// ─── Trades API（Sprint 1 内部账本，不连真实支付） ─────────────────────────
+
+/** POST /api/trades/record 的 body 结构 */
+export interface TradeRecordRequest {
+  /** 可选：关联某次委员会决议 ID */
+  verdict_id?: string;
+  /** 资产 symbol，如 NDQ.AX / GC=F */
+  symbol: string;
+  /** 方向：买入 / 卖出 */
+  direction: "BUY" | "SELL";
+  /** 手数 / 份数（正数） */
+  units: number;
+  /** 成交价（可选；不填则只记数量） */
+  price?: number;
+  /** 成本计价货币，如 CNY / AUD，不填后端用持仓货币 */
+  cost_currency?: string;
+  /** 用户备注，自由文本 */
+  note?: string;
+}
+
+/** POST /api/trades/record 返回 */
+export interface TradeRecordResponse {
+  id: string;
+  ok: true;
+}
+
+/** GET /api/trades 返回的单条记录 */
+export interface TradeRow {
+  id: string;
+  /** 记录时间 ISO8601 */
+  recorded_at: string;
+  symbol: string;
+  direction: "BUY" | "SELL";
+  units: number;
+  price?: number | null;
+  cost_currency?: string | null;
+  note?: string | null;
+  verdict_id?: string | null;
+  /** 执行状态 */
+  status: "planned" | "executed" | "cancelled";
+}
+
+/** GET /api/trades 返回 */
+export interface TradesListResponse {
+  count: number;
+  trades: TradeRow[];
+}
+
+/** PATCH /api/trades/{id}/status body */
+export interface TradeStatusPatch {
+  status: "planned" | "executed" | "cancelled";
+}
+
+/** PATCH /api/trades/{id}/status 返回 */
+export interface TradeStatusResponse {
+  ok: true;
+}
+
+/**
+ * 记录一笔交易到内部账本
+ * @param req 交易信息（不连真实支付）
+ */
+export async function recordTrade(req: TradeRecordRequest): Promise<TradeRecordResponse> {
+  return postJSON<TradeRecordRequest, TradeRecordResponse>(SWR_KEYS.TRADES_RECORD, req);
+}
+
+/**
+ * 拉取最近交易流水
+ * @param limit 最多拉几条，默认 50
+ */
+export async function listTrades(limit = 50): Promise<TradesListResponse> {
+  const res = await fetch(`/api/trades?limit=${limit}`, { credentials: "same-origin" });
+  if (!res.ok) {
+    let detail = res.statusText;
+    try { const j = await res.json(); detail = j.detail ?? j.message ?? detail; } catch { /* 非 JSON */ }
+    throw new ApiError(res.status, detail);
+  }
+  return res.json() as Promise<TradesListResponse>;
+}
+
+/**
+ * 更新交易状态（planned → executed / cancelled）
+ * @param id 交易 ID
+ * @param status 新状态
+ */
+export async function updateTradeStatus(id: string, status: TradeStatusPatch["status"]): Promise<TradeStatusResponse> {
+  return requestJSON<TradeStatusResponse>("PUT", SWR_KEYS.tradesStatus(Number(id)), { status });
 }
 
 /** POST helper（PR 4 写操作用） */
