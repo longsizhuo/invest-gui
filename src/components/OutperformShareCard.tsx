@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import useSWR from "swr";
 import { fetcher, type OutperformEventsResponse } from "../lib/api-client";
+import { SWR_KEYS } from "../lib/swr-keys";
 
 /**
  * OutperformShareCard
@@ -13,7 +14,7 @@ import { fetcher, type OutperformEventsResponse } from "../lib/api-client";
  */
 export function OutperformShareCard() {
   const { data } = useSWR<OutperformEventsResponse>(
-    "/api/outperform_events",
+    SWR_KEYS.OUTPERFORM_EVENTS,
     fetcher,
     {
       // 跑赢事件更新频率低，5 分钟刷一次即可

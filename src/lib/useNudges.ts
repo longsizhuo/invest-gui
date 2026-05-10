@@ -4,6 +4,7 @@ import type {
   FreshInsightsResponse,
   ReengagementResponse,
 } from "./api-client";
+import { SWR_KEYS } from "./swr-keys";
 
 // ─── 常量 ─────────────────────────────────────────────────────────────────────
 
@@ -67,7 +68,7 @@ async function fetchFreshInsights(
   push: (message: string, severity?: ToastSeverity) => void,
 ): Promise<void> {
   try {
-    const res = await fetch("/api/insights/fresh", { credentials: "same-origin" });
+    const res = await fetch(SWR_KEYS.INSIGHTS_FRESH, { credentials: "same-origin" });
     if (!res.ok) return;
     const data: FreshInsightsResponse = await res.json();
 
@@ -101,7 +102,7 @@ async function fetchReengagement(
   push: (message: string, severity?: ToastSeverity) => void,
 ): Promise<void> {
   try {
-    const res = await fetch("/api/reengagement", { credentials: "same-origin" });
+    const res = await fetch(SWR_KEYS.REENGAGEMENT, { credentials: "same-origin" });
     if (!res.ok) return;
     const data: ReengagementResponse = await res.json();
 

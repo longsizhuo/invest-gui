@@ -9,7 +9,10 @@ import {
   type RegimeResponse,
 } from "../lib/api-client";
 import { shortTime, labelPhase } from "../lib/format";
+import { SWR_KEYS } from "../lib/swr-keys";
 import { DataSourcesTab } from "./system/DataSourcesTab";
+import { PushTab } from "./system/PushTab";
+import { CostTab } from "./system/CostTab";
 
 /**
  * 系统页 —— 内部状态 + 数据源
@@ -23,7 +26,7 @@ import { DataSourcesTab } from "./system/DataSourcesTab";
  * - PnL 历史：原始 2h 快照点
  * - 数据源：yfinance / DB / commsec 健康度
  */
-type Tab = "jobs" | "regime" | "insights" | "dreams" | "pnl" | "data";
+type Tab = "jobs" | "regime" | "insights" | "dreams" | "pnl" | "data" | "push" | "cost";
 
 const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: "jobs", label: "Cron Jobs", hint: "静默任务时刻表" },
@@ -32,6 +35,8 @@ const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: "pnl", label: "PnL 历史", hint: "原始 2h 快照" },
   { id: "insights", label: "长期模式", hint: "Dreaming 沉淀" },
   { id: "dreams", label: "Dreams", hint: "短期记忆 + 候选池" },
+  { id: "push", label: "推送配置", hint: "QQ 群 / QQ 号推送通道" },
+  { id: "cost", label: "成本", hint: "本月 LLM token / 成本 / 调用次数" },
 ];
 
 export default function System() {
@@ -46,12 +51,13 @@ export default function System() {
         </p>
       </header>
 
+      {/* flex-wrap + 移动端小字：tabs 数量多时自然换行，不横向溢出 */}
       <div className="flex flex-wrap gap-1 border-b border-[var(--border-subtle)]">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`px-3 py-2 text-sm border-b-2 -mb-px transition ${
+            className={`px-2 sm:px-3 py-2 text-xs sm:text-sm border-b-2 -mb-px transition ${
               tab === t.id
                 ? "border-[var(--accent)] text-[var(--accent)]"
                 : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -70,6 +76,8 @@ export default function System() {
         {tab === "pnl" && <PnLTab />}
         {tab === "insights" && <InsightsTab />}
         {tab === "dreams" && <DreamsTab />}
+        {tab === "push" && <PushTab />}
+        {tab === "cost" && <CostTab />}
       </div>
     </div>
   );
@@ -79,7 +87,7 @@ export default function System() {
 
 function JobsTab() {
   const { data, error, isLoading } = useSWR<JobsStatusResponse>(
-    "/api/jobs/status",
+    SWR_KEYS.JOBS_STATUS,
     fetcher,
     { refreshInterval: 60_000 },
   );
@@ -181,7 +189,7 @@ function RegimeTab() {
 // =================== Insights ===================
 
 function InsightsTab() {
-  const { data, error, isLoading } = useSWR<InsightsResponse>("/api/insights", fetcher);
+  const { data, error, isLoading } = useSWR<InsightsResponse>(SWR_KEYS.INSIGHTS, fetcher);
   if (isLoading) return <div className="text-[var(--text-secondary)]">加载中...</div>;
   if (error) return <div className="text-neg">失败: {error.message}</div>;
   if (!data) return null;
@@ -220,7 +228,7 @@ function InsightsTab() {
 
 function DreamsTab() {
   const { data, error, isLoading } = useSWR<DreamsStateResponse>(
-    "/api/dreams/state?event_limit=30",
+    SWR_KEYS.DREAMS_STATE,
     fetcher,
   );
   if (isLoading) return <div className="text-[var(--text-secondary)]">加载中...</div>;
@@ -292,7 +300,7 @@ function DreamsTab() {
 
 function PnLTab() {
   const { data, error, isLoading } = useSWR<PnLHistoryResponse>(
-    "/api/pnl_history?since=200",
+    SWR_KEYS.PNL_HISTORY,
     fetcher,
   );
   if (isLoading) return <div className="text-[var(--text-secondary)]">加载中...</div>;
