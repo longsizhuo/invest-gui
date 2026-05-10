@@ -1,0 +1,50 @@
+name: CI
+
+# 每次 push 或 PR 跑 tsc + build，确保类型不破。
+# release-dist.yml 跑生产 build 推 dist tarball；本 workflow 只做"快速验证"。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck-and-build:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript check
+        run: pnpm tsc --noEmit
+
+      - name: Build
+        run: pnpm build
+
+      - name: SWR keys 完整性检查（绝不能有裸 /api/ 字符串散落）
+        # 防 dev 偷懒不用 SWR_KEYS 常量；除 swr-keys.ts / api-types.ts 外裸 "/api/..." 应为 0
+        run: |
+          count=$(grep -rn '"/api/' src/ 2>/dev/null | grep -v 'swr-keys\|api-types' | wc -l)
+          if [ "$count" -gt 0 ]; then
+            echo "❌ 发现 $count 处裸 /api/ 路径，应改用 SWR_KEYS 常量："
+            grep -rn '"/api/' src/ 2>/dev/null | grep -v 'swr-keys\|api-types'
+            exit 1
+          fi
+          echo "✅ SWR keys 全常量化"

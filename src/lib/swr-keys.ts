@@ -111,10 +111,6 @@ export const SWR_KEYS = {
   /** GET /api/reengagement —— 再参与 alert */
   REENGAGEMENT: "/api/reengagement",
 
-  // ─── 推送 ─────────────────────────────────────────────────────────────────
-  /** POST /api/push/test —— 发送测试消息（PushTab） */
-  PUSH_TEST: "/api/push/test",
-
   // ─── 公开命中率 ────────────────────────────────────────────────────────────
   /** GET /api/stats/public —— 脱敏聚合命中率（PublicStats 页） */
   STATS_PUBLIC: "/api/stats/public",

@@ -11,7 +11,6 @@ import {
 import { shortTime, labelPhase } from "../lib/format";
 import { SWR_KEYS } from "../lib/swr-keys";
 import { DataSourcesTab } from "./system/DataSourcesTab";
-import { PushTab } from "./system/PushTab";
 import { CostTab } from "./system/CostTab";
 
 /**
@@ -26,7 +25,7 @@ import { CostTab } from "./system/CostTab";
  * - PnL 历史：原始 2h 快照点
  * - 数据源：yfinance / DB / commsec 健康度
  */
-type Tab = "jobs" | "regime" | "insights" | "dreams" | "pnl" | "data" | "push" | "cost";
+type Tab = "jobs" | "regime" | "insights" | "dreams" | "pnl" | "data" | "cost";
 
 const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: "jobs", label: "Cron Jobs", hint: "静默任务时刻表" },
@@ -35,7 +34,6 @@ const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: "pnl", label: "PnL 历史", hint: "原始 2h 快照" },
   { id: "insights", label: "长期模式", hint: "Dreaming 沉淀" },
   { id: "dreams", label: "Dreams", hint: "短期记忆 + 候选池" },
-  { id: "push", label: "推送配置", hint: "QQ 群 / QQ 号推送通道" },
   { id: "cost", label: "成本", hint: "本月 LLM token / 成本 / 调用次数" },
 ];
 
@@ -76,7 +74,6 @@ export default function System() {
         {tab === "pnl" && <PnLTab />}
         {tab === "insights" && <InsightsTab />}
         {tab === "dreams" && <DreamsTab />}
-        {tab === "push" && <PushTab />}
         {tab === "cost" && <CostTab />}
       </div>
     </div>
