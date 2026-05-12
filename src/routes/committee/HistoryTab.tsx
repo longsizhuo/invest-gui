@@ -7,7 +7,30 @@ import {
 } from "../../lib/api-client";
 import { SWR_KEYS } from "../../lib/swr-keys";
 import { VerdictBadge } from "../../components/StatusBadge";
+import { CommitteeRolesPanel } from "../../components/CommitteeRolesPanel";
 import { verdictAction } from "../../lib/format";
+import type { RoleBrief } from "../../lib/parseCommitteeMd";
+
+/** 从 sections 数组里按 title 找指定角色，抽 SIGNAL/STRENGTH/ONE_LINER */
+function findRoleBrief(
+  sections: { title: string; body: string }[],
+  titlePattern: RegExp,
+  kind: "macro" | "quant" | "risk" | "wealth",
+): RoleBrief {
+  const sec = sections.find((s) => titlePattern.test(s.title));
+  if (!sec) return { raw: "", signal: null, strength: null, oneLiner: null };
+  const signalKey = kind === "wealth" ? "SOLVENCY_BUFFER_LEVEL" : "SIGNAL";
+  const linerKey = kind === "wealth" ? "EXPLANATION_TO_CIO" : "ONE_LINER";
+  const sigMatch = sec.body.match(new RegExp(`${signalKey}:\\s*([^\\n]+)`));
+  const strMatch = sec.body.match(/STRENGTH:\s*(\d+)/);
+  const linerMatch = sec.body.match(new RegExp(`${linerKey}:\\s*([^\\n]+)`));
+  return {
+    raw: sec.body,
+    signal: sigMatch?.[1]?.trim() ?? null,
+    strength: strMatch?.[1] ? parseInt(strMatch[1], 10) : null,
+    oneLiner: linerMatch?.[1]?.trim() ?? null,
+  };
+}
 
 /**
  * Committee · 决议历史归档
@@ -208,6 +231,20 @@ function CommitteeDetail({ date, symbol }: { date: string; symbol: string }) {
               </pre>
             </details>
           )}
+        </section>
+      )}
+
+      {/* 4 角色独立 brief —— 让用户一眼看清各角色判断 vs CIO 综合 */}
+      {parsed.sections.length > 0 && (
+        <section className="p-5 border-b border-[var(--border-subtle)]">
+          <CommitteeRolesPanel
+            roles={{
+              macro: findRoleBrief(parsed.sections, /Macro Strategist/i, "macro"),
+              quant: findRoleBrief(parsed.sections, /Quant Analyst/i, "quant"),
+              risk: findRoleBrief(parsed.sections, /Risk Officer/i, "risk"),
+              wealth: findRoleBrief(parsed.sections, /Wealth Context/i, "wealth"),
+            }}
+          />
         </section>
       )}
 
