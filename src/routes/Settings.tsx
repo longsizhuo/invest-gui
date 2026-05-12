@@ -177,35 +177,89 @@ export default function Settings() {
 
           <Field
             label="是否有家族经济支持"
-            hint="家族能在意外时兜底（医疗 / 失业 / 大额开支）"
+            hint="决定 Risk Officer 把'低 portfolio 现金'当不当流动性风险"
           >
             <select
               className={selectClass}
               value={familyBackup}
               onChange={(e) => setFamilyBackup(e.target.value as "unknown" | "yes" | "no")}
             >
-              <option value="unknown">未填（保留原值）</option>
-              <option value="yes">是</option>
-              <option value="no">否</option>
+              <option value="unknown">
+                未填 — agent 按"无 backup"保守判断
+              </option>
+              <option value="yes">
+                是 — 家族能在意外时兜底，agent 不会因低现金喊清仓
+              </option>
+              <option value="no">
+                否 — portfolio cash 就是全部 backup，低现金即流动性风险
+              </option>
             </select>
           </Field>
 
           <Field
             label="账户性质"
-            hint="决定 Risk Officer 怎么看待这个 portfolio"
+            hint="影响 WealthContextOfficer 怎么解释你的风险承受能力给委员会听"
           >
-            <select
-              className={selectClass}
-              value={accountPurpose}
-              onChange={(e) => setAccountPurpose(e.target.value)}
-            >
-              <option value="">未填</option>
-              <option value="零花钱账户">零花钱账户</option>
-              <option value="长期投资账户">长期投资账户</option>
-              <option value="退休金">退休金</option>
-              <option value="教育金">教育金</option>
-              <option value="其他">其他</option>
-            </select>
+            <div className="space-y-2">
+              {[
+                {
+                  value: "",
+                  title: "未填",
+                  desc: "agent 按通用规则判断（保守倾向）",
+                },
+                {
+                  value: "零花钱账户",
+                  title: "零花钱账户",
+                  desc: "短期消费 / 投机用钱，跌了不影响生活质量。委员会倾向激进，容忍较大回撤。",
+                },
+                {
+                  value: "长期投资账户",
+                  title: "长期投资账户",
+                  desc: "5 年以上视野，能承受波动换长期复利。委员会平衡 alpha 和回撤。",
+                },
+                {
+                  value: "退休金",
+                  title: "退休金",
+                  desc: "不可亏损为主，本金安全 > 收益。委员会强烈倾向保守 / 减仓。",
+                },
+                {
+                  value: "教育金",
+                  title: "教育金",
+                  desc: "有明确时间窗（孩子上学等）。临近时点委员会会主动降仓位。",
+                },
+                {
+                  value: "其他",
+                  title: "其他",
+                  desc: "不强制定性，agent 综合判断。",
+                },
+              ].map((opt) => (
+                <label
+                  key={opt.value}
+                  className={`flex items-start gap-3 p-3 cursor-pointer border transition-colors ${
+                    accountPurpose === opt.value
+                      ? "border-[var(--accent)] bg-[var(--surface-overlay)]"
+                      : "border-[var(--border-strong)] hover:border-[var(--border-strong-hover,var(--accent))]"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="account_purpose"
+                    value={opt.value}
+                    checked={accountPurpose === opt.value}
+                    onChange={(e) => setAccountPurpose(e.target.value)}
+                    className="mt-0.5 shrink-0"
+                  />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-[var(--text-primary)]">
+                      {opt.title}
+                    </div>
+                    <div className="text-xs text-[var(--text-tertiary)] mt-0.5 leading-relaxed">
+                      {opt.desc}
+                    </div>
+                  </div>
+                </label>
+              ))}
+            </div>
           </Field>
 
           <Field
