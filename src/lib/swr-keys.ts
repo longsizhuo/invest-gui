@@ -137,4 +137,16 @@ export const SWR_KEYS = {
   tradesStatus: (id: number) => `/api/trades/${id}/status`,
   /** POST /api/committee/run —— 触发委员会异步任务 */
   COMMITTEE_RUN: "/api/committee/run",
+
+  // ─── User profile / Wealth Context（GUI-only 入口）──────────────────────────
+  /** GET /api/user —— 读 user.md frontmatter（含 wealth_context） */
+  USER: "/api/user",
+  /** PUT /api/user/wealth_context —— 局部更新 off-portfolio 财务背景。
+   *
+   * **agent 物理上替代不了的字段**：agent 不知道用户家族多少钱、什么账户性质。
+   * WealthContextOfficer 新角色的数据入口，没填则委员会回退到老逻辑
+   * （Risk 把"低 portfolio cash"机械判 high_risk）。详见
+   * docs/wiki/12-verification.md 主张 7。
+   */
+  USER_WEALTH_CONTEXT: "/api/user/wealth_context",
 } as const;

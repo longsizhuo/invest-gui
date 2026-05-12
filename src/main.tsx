@@ -17,6 +17,7 @@ const Committee = React.lazy(() => import("./routes/committee"));
 const System = React.lazy(() => import("./routes/System"));
 const BulkImport = React.lazy(() => import("./routes/Holdings/BulkImport"));
 const PublicStats = React.lazy(() => import("./routes/PublicStats"));
+const Settings = React.lazy(() => import("./routes/Settings"));
 
 /** 路由加载中占位：居中圆圈 spinner + 文字 */
 function Loading() {
@@ -50,6 +51,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route path="holdings/import" element={<BulkImport />} />
                 {/* 公开命中率页：/public/stats（不走 CF Access，后续 Caddy 放行） */}
                 <Route path="public/stats" element={<PublicStats />} />
+                {/* 设置：唯一 GUI-only 数据入口（wealth_context 等 agent 拿不到的字段）*/}
+                <Route path="settings" element={<Settings />} />
                 {/* /transparency 已并入 /committee（书签兼容） */}
                 <Route path="transparency" element={<Navigate to="/committee" replace />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

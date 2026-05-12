@@ -1,0 +1,270 @@
+/**
+ * Settings 页 — 唯一 GUI-only 数据入口
+ *
+ * 为什么需要这个页：agent（Claude / Cursor / OpenClaw / Hermes）物理上不知道
+ * 用户家族多少钱 / 账户性质 —— 这些字段只能用户主动告诉系统。
+ *
+ * 当前唯一字段组：`wealth_context`（后端 WealthContextOfficer 新角色的数据入口）
+ * - emergency_buffer_cny: 应急金 / 家族 backup 额度（**不可作投资**，仅风险兜底）
+ * - family_backup_available: 是否有家族经济支持
+ * - account_purpose: 账户性质（零花钱 / 长期投资 / 退休金）
+ * - lifestyle_notes: 自由文本备注
+ *
+ * 没填则委员会回退到老逻辑（portfolio cash = 全部可调），Risk Officer 会把
+ * "低 portfolio cash"机械判 high_risk。详见 docs/wiki/12-verification.md 主张 7。
+ */
+import { useState, useEffect, FormEvent } from "react";
+import useSWR from "swr";
+import { fetcher, putJSON } from "../lib/api-client";
+import { SWR_KEYS } from "../lib/swr-keys";
+import { Card } from "../components/Card";
+import { Button } from "../components/Button";
+import { Field, inputClass, selectClass } from "../components/Field";
+import { useToast } from "../components/Toast";
+
+type WealthContext = {
+  emergency_buffer_cny?: number | null;
+  family_backup_available?: boolean | null;
+  account_purpose?: string | null;
+  lifestyle_notes?: string | null;
+};
+
+type UserProfile = {
+  display_name?: string | null;
+  risk_tolerance?: string | null;
+  exchange_buffer_cny?: number;
+  user_email?: string | null;
+  wealth_context?: WealthContext | null;
+};
+
+export default function Settings() {
+  const { data: user, error, isLoading, mutate } = useSWR<UserProfile>(
+    SWR_KEYS.USER,
+    fetcher,
+  );
+  const { push: showToast } = useToast();
+
+  // 表单本地 state
+  const [bufferCny, setBufferCny] = useState<string>("");
+  const [familyBackup, setFamilyBackup] = useState<"unknown" | "yes" | "no">("unknown");
+  const [accountPurpose, setAccountPurpose] = useState<string>("");
+  const [lifestyleNotes, setLifestyleNotes] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+
+  // 初次加载 / mutate 后同步表单
+  useEffect(() => {
+    const ctx = user?.wealth_context;
+    if (!ctx) return;
+    if (typeof ctx.emergency_buffer_cny === "number") {
+      setBufferCny(String(ctx.emergency_buffer_cny));
+    }
+    if (typeof ctx.family_backup_available === "boolean") {
+      setFamilyBackup(ctx.family_backup_available ? "yes" : "no");
+    }
+    if (typeof ctx.account_purpose === "string") {
+      setAccountPurpose(ctx.account_purpose);
+    }
+    if (typeof ctx.lifestyle_notes === "string") {
+      setLifestyleNotes(ctx.lifestyle_notes);
+    }
+  }, [user]);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const payload: WealthContext = {};
+      // 只发用户填了的字段（空字符串 / unknown 不发，保留后端原值）
+      const buf = bufferCny.trim();
+      if (buf !== "") {
+        const n = Number(buf);
+        if (!Number.isFinite(n) || n < 0) {
+          showToast("应急金必须是非负数字", "urgent");
+          setSaving(false);
+          return;
+        }
+        payload.emergency_buffer_cny = n;
+      }
+      if (familyBackup !== "unknown") {
+        payload.family_backup_available = familyBackup === "yes";
+      }
+      if (accountPurpose.trim() !== "") {
+        payload.account_purpose = accountPurpose.trim();
+      }
+      if (lifestyleNotes.trim() !== "") {
+        payload.lifestyle_notes = lifestyleNotes.trim();
+      }
+
+      await putJSON<WealthContext, UserProfile>(
+        SWR_KEYS.USER_WEALTH_CONTEXT,
+        payload,
+      );
+      await mutate();
+      showToast("已保存。下次跑委员会时 WealthContextOfficer 会用上这些信息。", "info");
+    } catch (e) {
+      showToast(`保存失败: ${e instanceof Error ? e.message : String(e)}`, "urgent");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (isLoading) {
+    return <p className="text-sm text-[var(--text-tertiary)]">加载中...</p>;
+  }
+  if (error) {
+    return (
+      <Card>
+        <h2 className="text-base font-semibold mb-2">设置</h2>
+        <p className="text-sm text-[var(--text-tertiary)]">
+          加载 user profile 失败: {error.message}。如果是第一次用，先跑 onboarding。
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <header>
+        <h1 className="text-xl font-display tracking-display-tight">设置</h1>
+        <p className="text-sm text-[var(--text-tertiary)] mt-1">
+          这里填的字段 agent 拿不到（agent 不知道你家族多少钱），
+          但 WealthContextOfficer 会用上让委员会做更合理的风险判断。
+        </p>
+      </header>
+
+      {/* User profile 只读摘要 */}
+      <Card>
+        <h2 className="text-sm font-semibold mb-3 text-[var(--text-tertiary)] uppercase tracking-wide">
+          用户档案（只读，改在 invest-setup skill 里跑）
+        </h2>
+        <dl className="grid grid-cols-2 gap-y-2 text-sm">
+          <dt className="text-[var(--text-tertiary)]">称呼</dt>
+          <dd className="font-mono">{user?.display_name ?? "—"}</dd>
+          <dt className="text-[var(--text-tertiary)]">风险偏好</dt>
+          <dd className="font-mono">{user?.risk_tolerance ?? "—"}</dd>
+          <dt className="text-[var(--text-tertiary)]">换汇周转金</dt>
+          <dd className="font-mono">¥{user?.exchange_buffer_cny ?? 0}</dd>
+        </dl>
+      </Card>
+
+      {/* Wealth Context 表单 */}
+      <Card>
+        <header className="mb-4">
+          <h2 className="text-base font-semibold">Off-Portfolio 财务背景</h2>
+          <p className="text-xs text-[var(--text-tertiary)] mt-1">
+            <strong className="text-[var(--text-secondary)]">铁律</strong>：
+            这些金额 <strong>不会</strong> 被算成"加仓预算"——委员会加仓金额仍只用
+            portfolio 内的现金。这里填的是"破产兜底"信息，
+            让 Risk Officer 不把"低 portfolio 现金"误判为高风险。
+          </p>
+        </header>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Field
+            label="应急金 / 家族 backup 额度 (CNY)"
+            hint="portfolio 外的备用金，仅作风险兜底，不可作投资。留空 = 不告诉 agent"
+          >
+            <input
+              type="number"
+              min="0"
+              step="1000"
+              className={inputClass}
+              placeholder="例: 200000 / 4000000"
+              value={bufferCny}
+              onChange={(e) => setBufferCny(e.target.value)}
+            />
+          </Field>
+
+          <Field
+            label="是否有家族经济支持"
+            hint="家族能在意外时兜底（医疗 / 失业 / 大额开支）"
+          >
+            <select
+              className={selectClass}
+              value={familyBackup}
+              onChange={(e) => setFamilyBackup(e.target.value as "unknown" | "yes" | "no")}
+            >
+              <option value="unknown">未填（保留原值）</option>
+              <option value="yes">是</option>
+              <option value="no">否</option>
+            </select>
+          </Field>
+
+          <Field
+            label="账户性质"
+            hint="决定 Risk Officer 怎么看待这个 portfolio"
+          >
+            <select
+              className={selectClass}
+              value={accountPurpose}
+              onChange={(e) => setAccountPurpose(e.target.value)}
+            >
+              <option value="">未填</option>
+              <option value="零花钱账户">零花钱账户</option>
+              <option value="长期投资账户">长期投资账户</option>
+              <option value="退休金">退休金</option>
+              <option value="教育金">教育金</option>
+              <option value="其他">其他</option>
+            </select>
+          </Field>
+
+          <Field
+            label="备注（自由文本）"
+            hint='示例："家族资金 ¥4M 仅作破产兜底，不可作为投资使用。加仓只能用 portfolio cash。"'
+          >
+            <textarea
+              className={`${inputClass} font-sans`}
+              rows={3}
+              maxLength={512}
+              value={lifestyleNotes}
+              onChange={(e) => setLifestyleNotes(e.target.value)}
+              placeholder="一句话告诉 agent 你的财务背景。"
+            />
+          </Field>
+
+          <div className="flex items-center gap-3 pt-2">
+            <Button type="submit" variant="primary" disabled={saving}>
+              {saving ? "保存中..." : "保存"}
+            </Button>
+            {user?.wealth_context && (
+              <span className="text-xs text-[var(--text-tertiary)]">
+                已设置 {Object.keys(user.wealth_context).length} 个字段
+              </span>
+            )}
+          </div>
+        </form>
+      </Card>
+
+      {/* 教学：为什么需要这些字段 */}
+      <Card>
+        <h2 className="text-sm font-semibold mb-2 text-[var(--text-tertiary)] uppercase tracking-wide">
+          为什么 agent 需要这些
+        </h2>
+        <div className="text-sm space-y-2 text-[var(--text-secondary)]">
+          <p>
+            没填 wealth_context 时：用户 portfolio cash 仅 ¥500 + NDQ 重仓 99.9%
+            → Risk Officer 报 <strong>high_risk</strong>，CIO 建议<strong>立即减仓 60%</strong>。
+            <em>但用户家族有 ¥4M 备用金，根本不存在流动性风险。</em>
+          </p>
+          <p>
+            填了 wealth_context 后：Risk Officer 看到 SOLVENCY_BUFFER=strong，
+            SIGNAL 降到 <strong>concerned</strong>，CIO 建议"集中度仍高但流动性 OK，
+            加仓上限 ≤¥50（portfolio cash 10%）"。
+          </p>
+          <p className="text-xs text-[var(--text-tertiary)] mt-3">
+            完整 E2E 实测对比见{" "}
+            <a
+              href="https://github.com/longsizhuo/openInvest/blob/main/docs/wiki/12-verification.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-[var(--accent)]"
+            >
+              docs/wiki/12-verification.md 主张 7
+            </a>
+            。
+          </p>
+        </div>
+      </Card>
+    </div>
+  );
+}

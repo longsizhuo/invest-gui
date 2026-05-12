@@ -37,6 +37,7 @@ const PRIMARY_NAV = [
 
 const SECONDARY_NAV = [
   { to: "/system", label: "系统" },
+  { to: "/settings", label: "设置" },
 ];
 
 /**
