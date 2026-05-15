@@ -12,6 +12,7 @@ import { shortTime, labelPhase } from "../lib/format";
 import { SWR_KEYS } from "../lib/swr-keys";
 import { DataSourcesTab } from "./system/DataSourcesTab";
 import { CostTab } from "./system/CostTab";
+import { EventsTab } from "./system/EventsTab";
 
 /**
  * 系统页 —— 内部状态 + 数据源
@@ -25,11 +26,12 @@ import { CostTab } from "./system/CostTab";
  * - PnL 历史：原始 2h 快照点
  * - 数据源：yfinance / DB / commsec 健康度
  */
-type Tab = "jobs" | "regime" | "insights" | "dreams" | "pnl" | "data" | "cost";
+type Tab = "jobs" | "regime" | "events" | "insights" | "dreams" | "pnl" | "data" | "cost";
 
 const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: "jobs", label: "Cron Jobs", hint: "静默任务时刻表" },
   { id: "regime", label: "市场 Regime", hint: "牛/熊/震荡判定" },
+  { id: "events", label: "事件 (Events)", hint: "实时新闻感知层 (ADR-006)" },
   { id: "data", label: "数据源", hint: "yfinance / DB / 邮件 健康度" },
   { id: "pnl", label: "PnL 历史", hint: "原始 2h 快照" },
   { id: "insights", label: "长期模式", hint: "Dreaming 沉淀" },
@@ -70,6 +72,7 @@ export default function System() {
       <div>
         {tab === "jobs" && <JobsTab />}
         {tab === "regime" && <RegimeTab />}
+        {tab === "events" && <EventsTab />}
         {tab === "data" && <DataSourcesTab />}
         {tab === "pnl" && <PnLTab />}
         {tab === "insights" && <InsightsTab />}
