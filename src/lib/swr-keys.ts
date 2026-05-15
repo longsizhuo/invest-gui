@@ -149,4 +149,18 @@ export const SWR_KEYS = {
    * docs/wiki/12-verification.md 主张 7。
    */
   USER_WEALTH_CONTEXT: "/api/user/wealth_context",
+
+  // ─── 事件感知层（ADR-006）—— Events Tab 用 ────────────────────────────────
+  /** GET /api/events/recent —— 列最近 N 小时事件（severity desc）。
+   *
+   * 用 query param 调：?hours=24&min_severity=mid&limit=50
+   * 跟 committee 的 recall() 不一样：不按 symbol 过滤，纯时序扫描，给
+   * "系统现在感知到什么事件" 的 debug view。
+   */
+  EVENTS_RECENT: "/api/events/recent",
+  /** POST /api/events/check —— 手动跑一次 event_watch（同步等待 30-90s）。
+   *
+   * 跟后端 cron 每 30 分钟自动跑同样的逻辑，给 Events Tab "立即扫描" 按钮用。
+   */
+  EVENTS_CHECK: "/api/events/check",
 } as const;
