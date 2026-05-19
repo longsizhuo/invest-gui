@@ -1,0 +1,30 @@
+name: release-please
+
+# 读 conventional commits (`feat:` / `fix:` / `feat!:` ...) 自动开 Release PR：
+# - 写 CHANGELOG.md
+# - bump package.json + .release-please-manifest.json
+# merge PR 后自动打 tag (vX.Y.Z) + 建 GitHub Release。
+#
+# 本地不需要任何动作 —— 只要 commit message 守住 conventional commits 规范就行。
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
