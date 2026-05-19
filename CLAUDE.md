@@ -51,6 +51,18 @@ invest-gui 在 openInvest 三层架构中扮演**展示层**：
 
 GUI 改动需要后端配合时，**两个仓库的 commit 应该在同一段时间内推上去**——不然 GUI ship 了但 API 没暴露，用户看到 `Unexpected token '<', "<!doctype "...` 这种错。
 
+## 发版（release-please）
+
+单组件，`v0.1.x` tag。改代码不需要做任何事——`release-please.yml` 监听 `main` push，自动开 Release PR、bump `package.json`、写 `CHANGELOG.md`、merge 后打 tag。
+
+**唯一纪律**：commit message 严格 conventional commits（`feat:` minor bump / `fix:` patch / `feat!:` major / `chore:` 不进 changelog）。fix typo 别写 `feat:`。
+
+⚠️ release-please 的 tag 跟现有的移动 tag `dist-latest`（`release-dist.yml` 每次 push 覆写的 prod build artifact）**完全独立**：
+- `vX.Y.Z` = 语义化版本 + changelog（人看的）
+- `dist-latest` = 最新 prod build 的 tarball（生产服务器 sync 用）
+
+两套并存即可。生产部署仍走 `dist-latest`，不要切到 `vX.Y.Z` tag——后者只是文档化的发版标记。
+
 ## 关键文件速查
 
 ```
