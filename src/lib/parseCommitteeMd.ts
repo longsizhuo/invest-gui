@@ -51,6 +51,10 @@ export interface ParsedCommittee {
     cio: string;
     /** 第 5 角色 WealthContextOfficer（real liquidity）—— 后端 d5b1e9f 引入 */
     wealth_context: string;
+    /** 确定性事实块（后端 v0.6.0 引入，非 LLM 输出）：估值（仅权益类非空） */
+    valuation: string;
+    /** 确定性事实块：市场情绪表盘（VIX 分位 + CNN + EVENT_STANCE + INDEP_DEFENSE_FLAG） */
+    sentiment: string;
   };
   /** 结构化角色 brief（给 4 角色 panel 用，不含 Round 2 adjusted）*/
   roles: {
@@ -75,6 +79,10 @@ const SECTION_PATTERNS = {
   riskR1: /### Risk Officer\s*\n+([\s\S]*?)(?=\n###\s|\n##\s|$)/,
   quantR2: /### Quant adjusted[^\n]*\n+([\s\S]*?)(?=\n###\s|\n##\s|$)/,
   riskR2: /### Risk adjusted[^\n]*\n+([\s\S]*?)(?=\n###\s|\n##\s|$)/,
+  // 确定性事实块（后端 core/committee.py _persist，v0.6.0+）。--- 分隔线夹在段间，
+  // 终止条件加 \n---，否则会把下一段吞进来
+  valuation: /## Valuation \(deterministic\)\s*\n+([\s\S]*?)(?=\n---|\n##\s|$)/,
+  sentiment: /## Market Sentiment \(deterministic\)\s*\n+([\s\S]*?)(?=\n---|\n##\s|$)/,
 };
 
 /**
@@ -134,6 +142,8 @@ export function parseCommitteeMd(content: string): ParsedCommittee {
       risk_r2: grab(SECTION_PATTERNS.riskR2),
       cio: grab(SECTION_PATTERNS.cio),
       wealth_context: wealthRaw,
+      valuation: grab(SECTION_PATTERNS.valuation),
+      sentiment: grab(SECTION_PATTERNS.sentiment),
     },
     roles: {
       macro: extractRoleBrief(macroRaw, "macro"),

@@ -20,7 +20,7 @@ import { EventsTab } from "./system/EventsTab";
  * 委员会相关（决议历史 / 4 角色 prompt / 命中率）已并入 /committee。
  * 这里只剩"系统在跑什么 + 数据从哪来"两类内部信息：
  * - Cron jobs：静默任务时刻表
- * - Regime：当前市场判定（喂给 quant LLM 的硬约束）
+ * - Regime：当前市场判定（喂给 quant LLM 的事实背景 + 概率口径）
  * - Insights：Dreaming 沉淀的长期模式
  * - Dreams：Dreaming 短期记忆 + 候选池
  * - PnL 历史：原始 2h 快照点
@@ -168,7 +168,7 @@ function RegimeTab() {
           </div>
 
           <details className="border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-3">
-            <summary className="text-xs text-[var(--text-secondary)] cursor-pointer">原始 metrics（喂给 quant LLM 的硬约束）</summary>
+            <summary className="text-xs text-[var(--text-secondary)] cursor-pointer">原始 metrics（喂给 quant LLM 的事实背景）</summary>
             <pre className="mt-2 text-xs text-[var(--text-primary)] whitespace-pre-wrap break-all max-h-96 overflow-auto">
               {JSON.stringify(data.inputs, null, 2)}
             </pre>

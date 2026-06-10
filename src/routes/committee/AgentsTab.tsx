@@ -48,7 +48,7 @@ export function AgentsTab() {
       <div className="border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-4">
         <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">📊 REGIME 硬规则</h3>
         <p className="text-xs text-[var(--text-secondary)] mb-3">
-          市场 regime 是「确定性算出」的硬约束（不是 LLM 判断）。Quant agent 必须遵守，防止震荡市底部错喊 bearish。
+          市场 regime 是「确定性算出」的标签（不是 LLM 判断），附带该 regime 的历史概率口径（30d 中位 / 跌破概率 / 样本数）。方向判断由 Quant 基于数据自决——无方向硬锁；快崩防御由独立的 VIX/ATR 哨兵在 verdict 后处理层确定性执行。
         </p>
         <div className="grid gap-4 md:grid-cols-2">
           <div>

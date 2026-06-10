@@ -389,6 +389,32 @@ function HistoryMode() {
         <>
           <PipelineFlow stages={stages} />
 
+          {/* 确定性事实块（后端 v0.6.0+，非 LLM 输出）：估值 + 市场情绪表盘 */}
+          {(parsed.sections.valuation || parsed.sections.sentiment) && (
+            <div className="grid gap-3 md:grid-cols-2">
+              {parsed.sections.valuation && (
+                <details open className="rounded border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-3">
+                  <summary className="cursor-pointer text-sm text-[var(--text-primary)]">
+                    📐 估值（确定性事实块，非 LLM）
+                  </summary>
+                  <pre className="mt-2 text-xs text-[var(--text-secondary)] whitespace-pre-wrap">
+                    {parsed.sections.valuation}
+                  </pre>
+                </details>
+              )}
+              {parsed.sections.sentiment && (
+                <details open className="rounded border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-3">
+                  <summary className="cursor-pointer text-sm text-[var(--text-primary)]">
+                    🌡 市场情绪表盘（确定性事实块，非 LLM）
+                  </summary>
+                  <pre className="mt-2 text-xs text-[var(--text-secondary)] whitespace-pre-wrap">
+                    {parsed.sections.sentiment}
+                  </pre>
+                </details>
+              )}
+            </div>
+          )}
+
           {/* 简化展示：分段卡片 */}
           <div className="grid gap-3 md:grid-cols-2">
             {stages.flatMap((s) =>
