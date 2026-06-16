@@ -38,13 +38,17 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Unit tests (vitest)
+        run: pnpm test
+
       - name: SWR keys 完整性检查（绝不能有裸 /api/ 字符串散落）
         # 防 dev 偷懒不用 SWR_KEYS 常量；除 swr-keys.ts / api-types.ts 外裸 "/api/..." 应为 0
+        # 测试文件（*.test.* / *.spec.*）排除：断言里写死 URL 字面量是合法且更强的测试
         run: |
-          count=$(grep -rn '"/api/' src/ 2>/dev/null | grep -v 'swr-keys\|api-types' | wc -l)
+          count=$(grep -rn '"/api/' src/ 2>/dev/null | grep -v 'swr-keys\|api-types\|\.test\.\|\.spec\.' | wc -l)
           if [ "$count" -gt 0 ]; then
             echo "❌ 发现 $count 处裸 /api/ 路径，应改用 SWR_KEYS 常量："
-            grep -rn '"/api/' src/ 2>/dev/null | grep -v 'swr-keys\|api-types'
+            grep -rn '"/api/' src/ 2>/dev/null | grep -v 'swr-keys\|api-types\|\.test\.\|\.spec\.'
             exit 1
           fi
           echo "✅ SWR keys 全常量化"
