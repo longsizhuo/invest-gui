@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SWR_KEYS } from "../lib/swr-keys";
 
 /**
@@ -96,12 +96,15 @@ export default function PublicStats() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 首次渲染时拉数据（避免 useSWR 的依赖，这个页面不需要 polling）
-  const [fetched, setFetched] = useState(false);
-  if (!fetched) {
-    setFetched(true);
-    // 异步拉取，不阻塞渲染
-    fetch(SWR_KEYS.STATS_PUBLIC, { credentials: "same-origin" })
+  // 挂载时拉一次数据（这个页面不需要 polling，故不用 useSWR）。
+  // 副作用必须在 effect 里，不能在 render 阶段——后者会触发 StrictMode 双拉、
+  // 并发渲染重复请求 / 卸载后 setState 告警。AbortController 负责 cleanup。
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(SWR_KEYS.STATS_PUBLIC, {
+      credentials: "same-origin",
+      signal: controller.signal,
+    })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         return res.json();
@@ -113,10 +116,12 @@ export default function PublicStats() {
         setLoading(false);
       })
       .catch((err: Error) => {
+        if (err.name === "AbortError") return; // 卸载/重渲染主动取消，非错误
         setError(err.message);
         setLoading(false);
       });
-  }
+    return () => controller.abort();
+  }, []);
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
