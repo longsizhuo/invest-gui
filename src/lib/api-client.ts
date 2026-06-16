@@ -89,7 +89,7 @@ export async function fetcher<T>(url: string): Promise<T> {
 
 /** 内部：发送写请求的通用逻辑，封装错误处理 */
 async function requestJSON<TRes>(
-  method: "POST" | "PUT" | "DELETE",
+  method: "POST" | "PUT" | "PATCH" | "DELETE",
   url: string,
   body?: unknown,
 ): Promise<TRes> {
@@ -273,7 +273,7 @@ export async function listTrades(limit = 50): Promise<TradesListResponse> {
  * @param status 新状态
  */
 export async function updateTradeStatus(id: string, status: TradeStatusPatch["status"]): Promise<TradeStatusResponse> {
-  return requestJSON<TradeStatusResponse>("PUT", SWR_KEYS.tradesStatus(Number(id)), { status });
+  return requestJSON<TradeStatusResponse>("PATCH", SWR_KEYS.tradesStatus(Number(id)), { status });
 }
 
 /** POST helper（PR 4 写操作用） */
