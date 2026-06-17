@@ -34,8 +34,39 @@ export interface paths {
         /**
          * Get Portfolio
          * @description 完整持仓快照（v1 兼容输出，前端无感）：现金 CNY/AUD + 黄金 + NDQ.AX
+         *
+         *     no-store：fork 用户报告"GUI 不同步"——常见原因是反向代理 / 浏览器把这条
+         *     GET 缓存住，NapCat 写完 portfolio.md 后 SWR 拿到的还是旧响应。后端每次
+         *     都直接读 disk（PortfolioManager 不缓存），所以靠 no-store 让中间层别截。
          */
         get: operations["get_portfolio_api_portfolio_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/portfolio/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Portfolio State
+         * @description 轻量同步信号：返回 portfolio.md 的 mtime + size + 一句概要。
+         *
+         *     GUI / agent 可以用这条做 polling 探针——比 /api/portfolio 便宜，且只要
+         *     NapCat / CLI 写过盘 mtime 就会跳。比单纯靠 60s SWR 刷新更精准。
+         *
+         *     用法（curl 端）：
+         *         curl -s http://127.0.0.1:8765/api/portfolio/state
+         *         → {"mtime": 1715823491.2, "size": 1005, "exists": true, ...}
+         */
+        get: operations["get_portfolio_state_api_portfolio_state_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -54,6 +85,9 @@ export interface paths {
         /**
          * Get Holdings
          * @description v2 通用持仓列表：cash dict + holdings 数组（含实时 quote + 计算 P&L）
+         *
+         *     no-store：参见 /api/portfolio 同步链路注释——防中间层缓存住，NapCat 写完
+         *     portfolio.md 后下次 SWR refresh 必须拿到新数据。
          */
         get: operations["get_holdings_api_holdings_get"];
         put?: never;
@@ -87,30 +121,6 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/holdings/{symbol}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update Holding
-         * @description 部分字段更新单个 holding（仅传非空字段会被改写）
-         */
-        put: operations["update_holding_api_holdings__symbol__put"];
-        post?: never;
-        /**
-         * Delete Holding
-         * @description 删除持仓。units > 0 时拒绝（避免数据丢失），用户必须先卖光或显式 set units=0
-         */
-        delete: operations["delete_holding_api_holdings__symbol__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -166,7 +176,7 @@ export interface paths {
         };
         /**
          * Get Gold
-         * @description 黄金持仓 + 实时金价 + 浙商参考价（独立端点，前端可单独刷新而不重拉 NDQ）
+         * @description 黄金持仓 + 实时金价 + 渠道参考价（独立端点，前端可单独刷新而不重拉其他资产）
          */
         get: operations["get_gold_api_gold_get"];
         put?: never;
@@ -258,6 +268,72 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/holdings/{symbol}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Holding
+         * @description 部分字段更新单个 holding（仅传非空字段会被改写）
+         */
+        put: operations["update_holding_api_holdings__symbol__put"];
+        post?: never;
+        /**
+         * Delete Holding
+         * @description 删除持仓。units > 0 时拒绝（避免数据丢失），用户必须先卖光或显式 set units=0
+         */
+        delete: operations["delete_holding_api_holdings__symbol__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/user": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get User Profile
+         * @description 读 user.md frontmatter（含 wealth_context 子对象）
+         */
+        get: operations["get_user_profile_api_user_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/user/wealth_context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Wealth Context
+         * @description 更新 user.md 的 wealth_context 字段（原子写）。
+         *
+         *     传 null/缺省 = 不动该字段；传值 = 覆盖。要清空某字段传空字符串或 0。
+         */
+        put: operations["update_wealth_context_api_user_wealth_context_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/deposit": {
         parameters: {
             query?: never;
@@ -291,6 +367,8 @@ export interface paths {
          * Withdraw
          * @description 取出现金（v2: 任意币种 + 负数校验）。
          *     余额不足默认 400 拒绝（PM 关切：避免 AUD -6894 类似事故）
+         *
+         *     余额检查在 fcntl 锁内执行，避免并发取款 TOCTOU 竞态。
          */
         post: operations["withdraw_api_withdraw_post"];
         delete?: never;
@@ -370,10 +448,116 @@ export interface paths {
         put?: never;
         /**
          * Gold Offset
-         * @description 报当日浙商克价 → 反推点差 offset → 写回 strategy.md。系统自学习浙商溢价
+         * @description 报当日实际买入克价 → 反推点差 offset → 写回 strategy.md。系统自学习渠道溢价
          */
         post: operations["gold_offset_api_gold_offset_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cash/{currency}/deposit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cash Deposit
+         * @description v2 通用任意币种存款
+         */
+        post: operations["cash_deposit_api_cash__currency__deposit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cash/{currency}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cash Withdraw
+         * @description v2 通用任意币种取款（默认禁止扣到负数 — PM 强烈要求；后续可加 force=true 显式越过）
+         *
+         *     余额检查在 fcntl 锁内执行，避免并发取款 TOCTOU 竞态。
+         */
+        post: operations["cash_withdraw_api_cash__currency__withdraw_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/strategy/allocations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Put Allocations
+         * @description 改资产配置目标（stock/cash 比例）。两者之和必须 ≈ 1（schema 强约束）
+         */
+        put: operations["put_allocations_api_strategy_allocations_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/strategy/asset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Target Asset
+         * @description 新增 target_asset。symbol 不能与现有重复
+         */
+        post: operations["add_target_asset_api_strategy_asset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/strategy/asset/{symbol}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Target Asset
+         * @description 更新单个 target_asset 的部分字段（仅传非空字段会被改写）
+         */
+        put: operations["update_target_asset_api_strategy_asset__symbol__put"];
+        post?: never;
+        /**
+         * Delete Target Asset
+         * @description 删除 target_asset。schema 要求至少剩 1 个，否则 400
+         */
+        delete: operations["delete_target_asset_api_strategy_asset__symbol__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -475,27 +659,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/strategy/allocations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Put Allocations
-         * @description 改资产配置目标（stock/cash 比例）。两者之和必须 ≈ 1（schema 强约束）
-         */
-        put: operations["put_allocations_api_strategy_allocations_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/strategy/asset": {
+    "/api/committee/prepare": {
         parameters: {
             query?: never;
             header?: never;
@@ -505,41 +669,24 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Add Target Asset
-         * @description 新增 target_asset。symbol 不能与现有重复
+         * Committee Prepare
+         * @description Coordinator 路径的 prep RPC：cmd_prepare_committee 同款自包含 brief
+         *
+         *     返回 brief + 6 段角色 prompt 全内联——远端客户端的 Claude 据此 spawn 4 个
+         *     subagent，全程不需要本地 memory/。symbol 不在 target_assets 时返回 CLI
+         *     同款 status=error dict（200）。
+         *
+         *     注意：内部拉 2y 行情 + 情绪/估值事实块，同步阻塞数十秒（与既有委员会端点
+         *     同款已知限制，生产建议 --workers 2+）。
          */
-        post: operations["add_target_asset_api_strategy_asset_post"];
+        post: operations["committee_prepare_api_committee_prepare_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/strategy/asset/{symbol}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update Target Asset
-         * @description 更新单个 target_asset 的部分字段（仅传非空字段会被改写）
-         */
-        put: operations["update_target_asset_api_strategy_asset__symbol__put"];
-        post?: never;
-        /**
-         * Delete Target Asset
-         * @description 删除 target_asset。schema 要求至少剩 1 个，否则 400
-         */
-        delete: operations["delete_target_asset_api_strategy_asset__symbol__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/cash/{currency}/deposit": {
+    "/api/committee/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -549,10 +696,461 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Cash Deposit
-         * @description v2 通用任意币种存款
+         * Committee Save
+         * @description Coordinator 路径的 persist RPC：cmd_save_committee 同款落盘
+         *
+         *     解析 transcript → parse_cio_memo（含确定性防御降级）→ 落
+         *     memory/.committee/<date>/<sym>.md + dream_event，返回 {saved, verdict}。
          */
-        post: operations["cash_deposit_api_cash__currency__deposit_post"];
+        post: operations["committee_save_api_committee_save_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/recent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Events Recent
+         * @description 列最近 N 小时入库的事件 + 各严重度计数。给 Events Tab 用。
+         *
+         *     跟 committee 决策路径的 recall() 不一样：不按 symbol 过滤，纯时序扫描，
+         *     让用户看到"系统现在感知到啥"。
+         */
+        get: operations["events_recent_api_events_recent_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Events Check
+         * @description 同步触发一次 event_watch（拉新闻 + 归一化 + 入库 + 命中触发委员会）。
+         *
+         *     给 Events Tab "立即扫描" 按钮用。**同步等待完成**（30-90s 不等），
+         *     前端用 loading state 兜住。
+         *
+         *     后端已有的 cron path 每 30 分钟也跑一次；这个端点是 on-demand 手动跑。
+         */
+        post: operations["events_check_api_events_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/commsec/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Commsec Preview
+         * @description 预览 CommSec 邮件拉到的新成交（不写入）。GUI [Import] 按钮先调它
+         */
+        get: operations["commsec_preview_api_commsec_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/commsec/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Commsec Apply
+         * @description 实际写入 CommSec 拉到的成交到 portfolio + history.jsonl
+         *
+         *     GUI 弹确认窗 → 用户点 Confirm → 调本接口
+         */
+        post: operations["commsec_apply_api_commsec_apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trades/record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Trade
+         * @description 记录一笔计划交易到本地账本（不连真实支付渠道）
+         *
+         *     写入 db/trades.db，返回 {id, ok: true}。
+         *     status 初始为 planned；跑完后用 PATCH /api/trades/{id}/status 改成 executed。
+         */
+        post: operations["record_trade_api_trades_record_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Trades
+         * @description 按时间倒序返回最近 N 笔账本记录
+         */
+        get: operations["list_trades_api_trades_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trades/{trade_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Trade Status
+         * @description 修改账本记录状态（planned → executed → cancelled）
+         *
+         *     当 status 改为 executed 时，自动同步更新 portfolio.md 持仓：
+         *     - BUY: upsert holding，重新算加权均价（avg_cost = 加权平均）
+         *     - SELL: holding.units -= trade.units；归零则 remove
+         *
+         *     响应额外携带 portfolio_synced 和 synced_holding 让前端展示 toast。
+         *
+         *     幂等保证靠**状态守卫**，不靠 _sync_trade_to_portfolio 本身——后者是累加的
+         *     （BUY: cur_units + units、cash -= amount），重复调用会重复入账。所以本端点用
+         *     trade_before["status"] 做转移判定：仅在非 executed → executed 的真实跃迁才同步；
+         *     对一笔已经 executed 的单子再次 PATCH executed（双击 / 网络超时重试 / agent 重发）
+         *     直接幂等返回，绝不二次同步（CLAUDE.md 红线 #4：账本一致性）。
+         *
+         *     原子性保证：先同步 portfolio（可重试），成功后再提交 trades.db status。
+         *     同步失败时 trade 保持原状态，重试仍是非 executed → 会重新同步，不会丢账。
+         */
+        patch: operations["patch_trade_status_api_trades__trade_id__status_patch"];
+        trace?: never;
+    };
+    "/api/doctor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Skill Doctor
+         * @description cmd_doctor 同款健康自检（hub 视角：检查 hub 的 memory/.env/LLM 可达性）
+         *
+         *     远端模式下客户端 doctor = 本接口结果 + 客户端本地段（连通性/token）。
+         */
+        get: operations["skill_doctor_api_doctor_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/skill/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Skill Status
+         * @description cmd_status 同款 JSON（cash/ndq/gold/all_holdings/total_assets_cny/fx/live_prices）
+         */
+        get: operations["skill_status_api_skill_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/skill/strategy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Skill Strategy
+         * @description cmd_strategy 同款 JSON（strategy frontmatter + Dreaming insights）
+         */
+        get: operations["skill_strategy_api_skill_strategy_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/skill/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Skill History
+         * @description cmd_history 同款 JSON（recent_trades + recent_debates，/api/history 只有 trades）
+         */
+        get: operations["skill_history_api_skill_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/skill/what_if": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Skill What If
+         * @description cmd_what_if 同款情景模拟（任意持仓涨跌 / 兼容 gold/ndq/audcny 旧参数）
+         */
+        post: operations["skill_what_if_api_skill_what_if_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/skill/buy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Skill Buy
+         * @description cmd_buy 同款加仓/建仓（加权平均成本 + 同步扣现金 + history 记 skill_remote）
+         */
+        post: operations["skill_buy_api_skill_buy_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/skill/sell": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Skill Sell
+         * @description cmd_sell 同款减仓（units 减、cost_avg 不变、按 cost_currency 还现金）
+         */
+        post: operations["skill_sell_api_skill_sell_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/skill/deposit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Skill Deposit
+         * @description cmd_deposit 同款存现金（/api/cash/* 是 WriteResponse 形状，对不上 CLI，故另设）
+         */
+        post: operations["skill_deposit_api_skill_deposit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/skill/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Skill Withdraw
+         * @description cmd_withdraw 同款取现金（余额检查在 fcntl 锁内）
+         */
+        post: operations["skill_withdraw_api_skill_withdraw_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/skill/delete_holding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Skill Delete Holding
+         * @description cmd_delete_holding 同款删持仓行（支持 force；DELETE /api/holdings 无 force 语义）
+         */
+        post: operations["skill_delete_holding_api_skill_delete_holding_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Insights
+         * @description Dreaming 整合出的长期模式
+         *
+         *     优先从 SQLite（db/insights.db）读取，降级到 memory/insights/*.md glob 扫描。
+         *     SQLite 方案减少 I/O 开销并支持 SQL 查询；.md 文件保留为人类可读副本。
+         */
+        get: operations["get_insights_api_insights_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/insights/fresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Fresh Insights
+         * @description 最近 N 小时新写入的 Dreaming insight，给 GUI 主面板做 toast/nudge 用
+         *
+         *     PM-3 留存漏洞 #1 修复：之前 Dreaming 三阶段（Light/REM/Deep Sleep）的产物
+         *     insights 只在 System 页深处展示，用户感受不到 "AI 在变聪明"。这个端点专门
+         *     挑"刚出炉"的 insight 让前端做 toast：
+         *         "AI 学到一条 80% 命中率新模式：黄金 ATR>3% 时 ACCUMULATE 7 天后..."
+         *
+         *     数据源优先级：
+         *       1. SQLite（db/insights.db），O(1) 查询，按 created_at 过滤
+         *       2. memory/insights/*.md glob + mtime（降级，渐进迁移期间保底）
+         */
+        get: operations["get_fresh_insights_api_insights_fresh_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reengagement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Reengagement Alerts
+         * @description 主动 nudge 用户回 GUI 的事件流。前端轮询，detected 就弹 toast。
+         *
+         *     PM-3 留存漏洞 #3 修复：当前没有任何 outbound 触发器把"事件"推到用户面前。
+         *     这个端点把以下三类事件聚合：
+         *       - volatile: 任一持仓今日涨跌幅 > 5%
+         *       - high_confidence_buy: 最新 verdict confidence > 0.8 且方向是 BUY/ACCUMULATE
+         *       - stale_decision: 上次跑委员会 > 7 天（用户该看一眼了）
+         */
+        get: operations["get_reengagement_alerts_api_reengagement_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -571,106 +1169,6 @@ export interface paths {
          * @description 所有 cron job 的配置 + APScheduler 下次触发时间。让 GUI 能看到"什么在静默跑
          */
         get: operations["get_jobs_status_api_jobs_status_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/insights": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Insights
-         * @description Dreaming 整合出的长期模式（memory/insights/*.md）
-         */
-        get: operations["get_insights_api_insights_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/regime/{symbol}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Regime
-         * @description 实时算指定 symbol 的市场 regime（牛/熊/震荡）+ 给 LLM 看的 brief
-         */
-        get: operations["get_regime_api_regime__symbol__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/dreams/state": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Dreams State
-         * @description Dreaming 子系统当前状态：短期记忆 + 候选池 + 最近 events
-         */
-        get: operations["get_dreams_state_api_dreams_state_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/pnl_history": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Pnl History
-         * @description 原始 PnL 历史数据点（jobs/pnl_snapshot 工作日每 2h 写一条）
-         */
-        get: operations["get_pnl_history_api_pnl_history_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/committee_sessions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Committee Sessions
-         * @description 历史委员会决议列表（memory/.committee/<date>/<symbol>.md），按时间倒序
-         */
-        get: operations["list_committee_sessions_api_committee_sessions_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -730,9 +1228,31 @@ export interface paths {
          * Get Data Sources Health
          * @description 所有数据源的当前可达性 + 最后成功拉取时间。GUI 透明化"我们用什么数据决策"
          *
-         *     数据源：yfinance NDQ.AX / GC=F / USDCNY=X / VIX / TNX；DB market_store；CommSec processed_emails
+         *     B5 通用化（2026-05）：监控 symbol 不再硬编码作者持仓（NDQ.AX/GC=F），
+         *     动态读用户实际 holdings；额外保留宏观指标（VIX/TNX/USDCNY 等）作背景。
          */
         get: operations["get_data_sources_health_api_data_sources_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents/tool_calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Tool Calls
+         * @description 每次 LLM 主动调 tool 的明细（agent_role / asset / tool_name / args / result preview / 耗时）。
+         *     GUI 用此端点告诉用户 'AI 在 18:05 主动查了 multi_timeframe(NDQ.AX) 拿技术指标'
+         */
+        get: operations["get_tool_calls_api_agents_tool_calls_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -801,7 +1321,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/regime_rules": {
+    "/api/committee_sessions": {
         parameters: {
             query?: never;
             header?: never;
@@ -809,37 +1329,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Regime Rules
-         * @description 暴露 invest 项目所有「硬规则」+「LLM 提示词」给 GUI marketing 页
+         * List Committee Sessions
+         * @description 历史委员会决议列表（memory/.committee/<date>/<symbol>.md），按时间倒序
          *
-         *     包含：
-         *     - core/regime.py 阈值表
-         *     - 4 个 agent 角色的 system prompt 全文
-         *     - CIO sanity check 清单
-         *     - 5 个可被 LLM 调用的 tool
+         *     no-store：决策回放页"看不到内容"的常见误诊——SWR 拿到的是中间层缓存的
+         *     空列表。每跑一次委员会都会新增 .md，必须保证下一次 GET 拿到的是 disk
+         *     实际状态。
          */
-        get: operations["get_regime_rules_api_regime_rules_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/agents/tool_calls": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Tool Calls
-         * @description 每次 LLM 主动调 tool 的明细（agent_role / asset / tool_name / args / result preview / 耗时）。
-         *     GUI 用此端点告诉用户 'AI 在 18:05 主动查了 multi_timeframe(NDQ.AX) 拿技术指标'
-         */
-        get: operations["get_tool_calls_api_agents_tool_calls_get"];
+        get: operations["list_committee_sessions_api_committee_sessions_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -868,27 +1365,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/cash/{currency}/withdraw": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Cash Withdraw
-         * @description v2 通用任意币种取款（默认禁止扣到负数 — PM 强烈要求；后续可加 force=true 显式越过）
-         */
-        post: operations["cash_withdraw_api_cash__currency__withdraw_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/commsec/preview": {
+    "/api/regime/{symbol}": {
         parameters: {
             query?: never;
             header?: never;
@@ -896,10 +1373,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Commsec Preview
-         * @description 预览 CommSec 邮件拉到的新成交（不写入）。GUI [Import] 按钮先调它
+         * Get Regime
+         * @description 实时算指定 symbol 的市场 regime（牛/熊/震荡）+ 给 LLM 看的 brief
          */
-        get: operations["commsec_preview_api_commsec_preview_get"];
+        get: operations["get_regime_api_regime__symbol__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -908,7 +1385,120 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/commsec/apply": {
+    "/api/regime_rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Regime Rules
+         * @description 暴露 invest 项目所有「硬规则」+「LLM 提示词」给 GUI marketing 页
+         *
+         *     包含：
+         *     - core/regime.py 阈值表
+         *     - 4 个 agent 角色的 system prompt 全文
+         *     - CIO sanity check 清单
+         *     - 5 个可被 LLM 调用的 tool
+         */
+        get: operations["get_regime_rules_api_regime_rules_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dreams/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Dreams State
+         * @description Dreaming 子系统当前状态：短期记忆 + 候选池 + 最近 events
+         */
+        get: operations["get_dreams_state_api_dreams_state_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pnl_history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Pnl History
+         * @description 原始 PnL 历史数据点（jobs/pnl_snapshot 工作日每 2h 写一条）
+         */
+        get: operations["get_pnl_history_api_pnl_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/outperform_events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Outperform Events
+         * @description openInvest 跑赢基准的"可分享瞬间"列表
+         *
+         *     PM-3 增长杠杆：每次 pnl_snapshot 检测到 user_pct > bench_pct 都会落一条到
+         *     docs/outperform_events.jsonl。GUI 可以把最近一条做成 toast / 截图分享卡。
+         */
+        get: operations["get_outperform_events_api_outperform_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Config
+         * @description 读白名单全部配置项的当前生效值（含是否被持久 override + 元信息）。
+         */
+        get: operations["get_config_api_config_get"];
+        /**
+         * Put Config
+         * @description 设一条白名单 override（落盘持久化，跨 web/cron/skill 共读）。非白名单/非法值 → 400。
+         */
+        put: operations["put_config_api_config_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/config/{key}": {
         parameters: {
             query?: never;
             header?: never;
@@ -917,14 +1507,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        post?: never;
         /**
-         * Commsec Apply
-         * @description 实际写入 CommSec 拉到的成交到 portfolio + history.jsonl
-         *
-         *     GUI 弹确认窗 → 用户点 Confirm → 调本接口
+         * Delete Config
+         * @description 删一条持久 override，回退到 env/yaml/默认。非白名单 key → 404。
          */
-        post: operations["commsec_apply_api_commsec_apply_post"];
-        delete?: never;
+        delete: operations["delete_config_api_config__key__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -974,6 +1562,14 @@ export interface components {
             /** Target Allocation Cash */
             target_allocation_cash: number;
         };
+        /** Body_patch_trade_status_api_trades__trade_id__status_patch */
+        Body_patch_trade_status_api_trades__trade_id__status_patch: {
+            /**
+             * Status
+             * @description 新状态：planned / executed / cancelled
+             */
+            status: string;
+        };
         /**
          * CashSummary
          * @description 现金部分
@@ -986,7 +1582,7 @@ export interface components {
             cny: number;
             /**
              * Aud
-             * @description AUD 现金（CommSec 子弹）
+             * @description AUD 现金
              */
             aud: number;
         };
@@ -997,6 +1593,14 @@ export interface components {
         CashWriteRequest: {
             /** Amount */
             amount: number;
+        };
+        /**
+         * CommitteePrepareRequest
+         * @description POST /api/committee/prepare body
+         */
+        CommitteePrepareRequest: {
+            /** Symbol */
+            symbol: string;
         };
         /**
          * CommitteeRunRequest
@@ -1025,6 +1629,11 @@ export interface components {
              * @default 4
              */
             max_debate_rounds: number;
+            /**
+             * Event Ids
+             * @description 事件层（event_watch）触发委员会时传入的事件 id 列表。仅用于审计 （写 meta.json）+ 让 Macro 看到这些事件的结构化 brief；不影响 verdict 解析逻辑。其他 caller 不需要传。
+             */
+            event_ids?: string[] | null;
         };
         /**
          * CommitteeRunResponse
@@ -1042,6 +1651,19 @@ export interface components {
             started_at: string;
             /** Poll Url */
             poll_url: string;
+        };
+        /**
+         * CommitteeSaveRequest
+         * @description POST /api/committee/save body
+         */
+        CommitteeSaveRequest: {
+            /** Symbol */
+            symbol: string;
+            /**
+             * Transcript
+             * @description 6 段 '=== ROLE ===' 分隔的 transcript 全文
+             */
+            transcript: string;
         };
         /** CommitteeSessionDetail */
         CommitteeSessionDetail: {
@@ -1170,6 +1792,65 @@ export interface components {
             error?: string | null;
         };
         /**
+         * ConfigItem
+         * @description GET/PUT /api/config 中的单条白名单配置项
+         */
+        ConfigItem: {
+            /**
+             * Key
+             * @description dotted config key，如 verdict.concentration_lens_enabled
+             */
+            key: string;
+            /**
+             * Value
+             * @description 当前生效值（bool 或 enum 字符串）
+             */
+            value: unknown;
+            /**
+             * Overridden
+             * @description 是否被持久 API override（区别于 env/yaml/默认）
+             */
+            overridden: boolean;
+            /**
+             * Type
+             * @description bool | enum
+             */
+            type: string;
+            /** Label */
+            label: string;
+            /** Help */
+            help: string;
+            /**
+             * Choices
+             * @description enum 时的可选值
+             */
+            choices?: string[] | null;
+        };
+        /**
+         * ConfigResponse
+         * @description GET/PUT/DELETE /api/config 响应：白名单全部配置项的当前生效视图
+         */
+        ConfigResponse: {
+            /** Items */
+            items: components["schemas"]["ConfigItem"][];
+        };
+        /**
+         * ConfigUpdateRequest
+         * @description PUT /api/config body：设一条白名单 override
+         */
+        ConfigUpdateRequest: {
+            /**
+             * Key
+             * @description 必须 ∈ 白名单（API_SETTABLE）
+             */
+            key: string;
+            /**
+             * Value
+             * @description bool 或 enum 字符串；后端按白名单 spec 校验
+             */
+            value: unknown;
+        };
+        /**
          * DailyEntry
          * @description 单天 daily 日志（完整 markdown）
          */
@@ -1253,6 +1934,106 @@ export interface components {
             recent_events: components["schemas"]["DreamEvent"][];
         };
         /**
+         * EventCheckResponse
+         * @description POST /api/events/check —— 手动跑一次 event_watch
+         */
+        EventCheckResponse: {
+            /** Status */
+            status: string;
+            /** Fetched */
+            fetched: number;
+            /** New Events */
+            new_events: number;
+            /** Triggered */
+            triggered: number;
+            /** Duration Ms */
+            duration_ms: number;
+        };
+        /**
+         * EventItem
+         * @description 单条事件（GUI Events Tab 渲染）
+         */
+        EventItem: {
+            /** Event Id */
+            event_id: string;
+            /** One Line Claim */
+            one_line_claim: string;
+            /** Event Type */
+            event_type: string;
+            /** Stance */
+            stance: string;
+            /** Severity */
+            severity: string;
+            /** Affected Symbols */
+            affected_symbols?: string[];
+            /** Entities */
+            entities?: string[];
+            /** Ts */
+            ts: string;
+            /** Committee Task Id */
+            committee_task_id?: string | null;
+        };
+        /** EventsRecentResponse */
+        EventsRecentResponse: {
+            /** Hours */
+            hours: number;
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Items */
+            items: components["schemas"]["EventItem"][];
+        };
+        /**
+         * FreshInsightItem
+         * @description 新鲜出炉的 Dreaming insight，给 GUI toast 用（PM-3 留存杠杆）
+         */
+        FreshInsightItem: {
+            /**
+             * Slug
+             * @description insight 文件名（不含 .md）
+             */
+            slug: string;
+            /**
+             * Title
+             * @description 一句话总结，供 toast 直接展示
+             */
+            title: string;
+            /**
+             * Hit Rate
+             * @description 该模式历史命中率 0-1
+             */
+            hit_rate?: number | null;
+            /**
+             * Sample Count
+             * @description 支持样本数
+             */
+            sample_count?: number | null;
+            /**
+             * Asset
+             * @description 资产 symbol（如适用）
+             */
+            asset?: string | null;
+            /**
+             * Written At
+             * @description insight 文件 mtime ISO
+             */
+            written_at: string;
+        };
+        /** FreshInsightsResponse */
+        FreshInsightsResponse: {
+            /**
+             * Count
+             * @description 返回的 fresh insight 条数
+             */
+            count: number;
+            /**
+             * Items
+             * @description 按写入时间倒序
+             */
+            items: components["schemas"]["FreshInsightItem"][];
+        };
+        /**
          * GoldHolding
          * @description 黄金持仓 + 实时估值
          */
@@ -1274,12 +2055,12 @@ export interface components {
             spot_cny_per_gram?: number | null;
             /**
              * Bank Cny Per Gram
-             * @description 浙商参考克价（含点差）
+             * @description 渠道参考克价（含点差，渠道由 strategy/INVEST_GOLD_CHANNEL 决定）
              */
             bank_cny_per_gram?: number | null;
             /**
              * Offset Pct
-             * @description 浙商点差
+             * @description 渠道点差（spot → 实际买入克价的溢价）
              * @default 0
              */
             offset_pct: number;
@@ -1302,12 +2083,12 @@ export interface components {
         };
         /**
          * GoldOffsetRequest
-         * @description POST /api/gold/offset body — 报当日浙商克价，反推点差
+         * @description POST /api/gold/offset body — 报当日实际买入克价，反推渠道点差
          */
         GoldOffsetRequest: {
             /**
              * Bank Price
-             * @description 浙商当日克价 CNY/g
+             * @description 当日实际买入克价 CNY/g（任何银行/纸黄金渠道都通用）
              */
             bank_price: number;
         };
@@ -1634,7 +2415,7 @@ export interface components {
             provider: string;
             /**
              * Model
-             * @default deepseek-chat
+             * @default deepseek-v4-flash
              */
             model: string;
             /**
@@ -1720,6 +2501,55 @@ export interface components {
              */
             last_updated?: string | null;
         };
+        /**
+         * OutperformEvent
+         * @description openInvest 跑赢某个基准的"可分享瞬间" event（jobs/pnl_snapshot 写入）
+         */
+        OutperformEvent: {
+            /**
+             * Ts
+             * @description snapshot 时间戳 ISO
+             */
+            ts: string;
+            /**
+             * Benchmark
+             * @description 基准名，如 余额宝 / 沪深300 / Wealthfront
+             */
+            benchmark: string;
+            /**
+             * User Pct
+             * @description openInvest 实盘累计涨幅 %
+             */
+            user_pct: number;
+            /**
+             * Bench Pct
+             * @description 基准累计涨幅 %
+             */
+            bench_pct: number;
+            /**
+             * Diff Pct
+             * @description 跑赢幅度 % (user - bench)
+             */
+            diff_pct: number;
+            /**
+             * Label
+             * @description 拼好的可分享文案
+             */
+            label: string;
+        };
+        /** OutperformEventsResponse */
+        OutperformEventsResponse: {
+            /**
+             * Count
+             * @description 返回的事件数
+             */
+            count: number;
+            /**
+             * Events
+             * @description 按时间倒序
+             */
+            events: components["schemas"]["OutperformEvent"][];
+        };
         /** PnLHistoryPoint */
         PnLHistoryPoint: {
             /** Ts */
@@ -1744,6 +2574,92 @@ export interface components {
             cash: components["schemas"]["CashSummary"];
             gold: components["schemas"]["GoldHolding"];
             ndq: components["schemas"]["NDQHolding"];
+        };
+        /**
+         * RecordTradeRequest
+         * @description POST /api/trades/record body
+         */
+        RecordTradeRequest: {
+            /**
+             * Symbol
+             * @description 标的代码，如 NDQ.AX / GC=F
+             */
+            symbol: string;
+            /**
+             * Direction
+             * @description 方向：BUY 或 SELL
+             * @enum {string}
+             */
+            direction: "BUY" | "SELL";
+            /**
+             * Units
+             * @description 数量（股数 / 克数）
+             */
+            units: number;
+            /**
+             * Price
+             * @description 每单位价格；None 表示市价
+             */
+            price?: number | null;
+            /**
+             * Cost Currency
+             * @description 计价货币，默认 CNY
+             * @default CNY
+             */
+            cost_currency: string;
+            /**
+             * Verdict Id
+             * @description 关联 committee transcript 路径（可选）
+             */
+            verdict_id?: string | null;
+            /**
+             * Note
+             * @description 备注（可选）
+             */
+            note?: string | null;
+            /**
+             * Intended Date
+             * @description 计划成交日期，ISO 格式 YYYY-MM-DD，可空。None 表示「现在记录、现在打算执行」；填具体日期表示计划在该日成交（金融审计用，与 ts 独立）。
+             */
+            intended_date?: string | null;
+        };
+        /**
+         * ReengagementAlert
+         * @description 主动 nudge 用户回来的事件（PM-3 留存漏洞 #3 修复）
+         */
+        ReengagementAlert: {
+            /**
+             * Kind
+             * @description alert 类型：volatile / high_confidence_buy / stale_decision
+             */
+            kind: string;
+            /**
+             * Asset
+             * @description 资产 symbol
+             */
+            asset?: string | null;
+            /**
+             * Message
+             * @description 给用户看的一句话
+             */
+            message: string;
+            /**
+             * Severity
+             * @description info / warn / urgent
+             */
+            severity: string;
+            /**
+             * Detected At
+             * @description 检测时间 ISO
+             */
+            detected_at: string;
+        };
+        /** ReengagementResponse */
+        ReengagementResponse: {
+            /** Count */
+            count: number;
+            /** Alerts */
+            alerts: components["schemas"]["ReengagementAlert"][];
         };
         /** RegimeResponse */
         RegimeResponse: {
@@ -1785,6 +2701,91 @@ export interface components {
             tools: {
                 [key: string]: unknown;
             }[];
+        };
+        /**
+         * SkillBuyRequest
+         * @description POST /api/skill/buy body —— 字段与 CLI buy 参数一一对应
+         */
+        SkillBuyRequest: {
+            /** Symbol */
+            symbol: string;
+            /** Units */
+            units: number;
+            /** Price */
+            price: number;
+            /**
+             * Currency
+             * @default CNY
+             */
+            currency: string;
+            /**
+             * Kind
+             * @default equity
+             * @enum {string}
+             */
+            kind: "equity" | "etf" | "metal" | "crypto" | "bond" | "fund" | "other";
+            /**
+             * Unit Label
+             * @default 股
+             */
+            unit_label: string;
+        };
+        /**
+         * SkillCashRequest
+         * @description POST /api/skill/deposit|withdraw body
+         */
+        SkillCashRequest: {
+            /** Currency */
+            currency: string;
+            /** Amount */
+            amount: number;
+        };
+        /**
+         * SkillDeleteHoldingRequest
+         * @description POST /api/skill/delete_holding body
+         */
+        SkillDeleteHoldingRequest: {
+            /** Symbol */
+            symbol: string;
+            /**
+             * Force
+             * @default false
+             */
+            force: boolean;
+        };
+        /**
+         * SkillSellRequest
+         * @description POST /api/skill/sell body
+         */
+        SkillSellRequest: {
+            /** Symbol */
+            symbol: string;
+            /** Units */
+            units: number;
+            /** Price */
+            price: number;
+        };
+        /**
+         * SkillWhatIfRequest
+         * @description POST /api/skill/what_if body —— 字段与 CLI what_if 参数一一对应
+         */
+        SkillWhatIfRequest: {
+            /** Symbol */
+            symbol?: string | null;
+            /** Pct */
+            pct?: number | null;
+            /** Price */
+            price?: number | null;
+            /** Gold Price */
+            gold_price?: number | null;
+            /** Gold Pct */
+            gold_pct?: number | null;
+            /** Ndq Price */
+            ndq_price?: number | null;
+            /** Ndq Pct */
+            ndq_pct?: number | null;
+            /** Audcny */
+            audcny?: number | null;
         };
         /**
          * StrategyResponse
@@ -1982,6 +2983,67 @@ export interface components {
                 [key: string]: number | null;
             };
         };
+        /**
+         * TradeRecord
+         * @description 单笔 trade 记录（返回给前端）
+         */
+        TradeRecord: {
+            /** Id */
+            id: number;
+            /** Ts */
+            ts: string;
+            /** Verdict Id */
+            verdict_id?: string | null;
+            /** Symbol */
+            symbol: string;
+            /** Direction */
+            direction: string;
+            /** Units */
+            units: number;
+            /** Price */
+            price?: number | null;
+            /** Cost Currency */
+            cost_currency: string;
+            /** Note */
+            note?: string | null;
+            /** Status */
+            status: string;
+            /** Intended Date */
+            intended_date?: string | null;
+        };
+        /**
+         * TradesListResponse
+         * @description GET /api/trades 响应
+         */
+        TradesListResponse: {
+            /** Count */
+            count: number;
+            /** Trades */
+            trades: components["schemas"]["TradeRecord"][];
+        };
+        /**
+         * UserProfileResponse
+         * @description GET /api/user 返回 user.md frontmatter 全部字段
+         */
+        UserProfileResponse: {
+            /** Display Name */
+            display_name?: string | null;
+            /** Risk Tolerance */
+            risk_tolerance?: string | null;
+            /**
+             * Exchange Buffer Cny
+             * @default 0
+             */
+            exchange_buffer_cny: number;
+            /** Last Payday */
+            last_payday?: string | null;
+            /** User Email */
+            user_email?: string | null;
+            /** Wealth Context */
+            wealth_context?: {
+                [key: string]: unknown;
+            } | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -2069,6 +3131,38 @@ export interface components {
             directional_only_hit_rate?: number | null;
             /** Has Report Md */
             has_report_md: boolean;
+        };
+        /**
+         * WealthContextRequest
+         * @description PUT /api/user/wealth_context body — off-portfolio 财务背景
+         *
+         *     家族资金 / 应急金等 backup 信息。**铁律：这些金额永远不算"可投资资金"**——
+         *     只让 WealthContextOfficer 把"低 portfolio cash"消化掉，避免 Risk 误判
+         *     high_risk。详见 docs/wiki/12-verification.md 主张 7。
+         *
+         *     所有字段可选；全空表示用户没有 off-portfolio backup（走老逻辑）。
+         */
+        WealthContextRequest: {
+            /**
+             * Emergency Buffer Cny
+             * @description 应急金 / 家族 backup 额度（CNY）。**不可作投资**，仅作风险兜底
+             */
+            emergency_buffer_cny?: number | null;
+            /**
+             * Family Backup Available
+             * @description 是否有家族经济支持（破产兜底）
+             */
+            family_backup_available?: boolean | null;
+            /**
+             * Account Purpose
+             * @description 账户性质，如 "零花钱账户" / "长期投资账户" / "退休金"
+             */
+            account_purpose?: string | null;
+            /**
+             * Lifestyle Notes
+             * @description 自由文本说明，如 '家族资金 ¥4M 仅作破产兜底，不可作投资使用'
+             */
+            lifestyle_notes?: string | null;
         };
         /**
          * WithdrawRequest
@@ -2163,6 +3257,28 @@ export interface operations {
             };
         };
     };
+    get_portfolio_state_api_portfolio_state_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
     get_holdings_api_holdings_get: {
         parameters: {
             query?: never;
@@ -2235,74 +3351,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TotalValueResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_holding_api_holdings__symbol__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                symbol: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["HoldingPatchRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HoldingV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_holding_api_holdings__symbol__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                symbol: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
                 };
             };
             /** @description Validation Error */
@@ -2480,6 +3528,127 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DailyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_holding_api_holdings__symbol__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                symbol: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HoldingPatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoldingV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_holding_api_holdings__symbol__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                symbol: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_profile_api_user_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfileResponse"];
+                };
+            };
+        };
+    };
+    update_wealth_context_api_user_wealth_context_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WealthContextRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfileResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2691,16 +3860,18 @@ export interface operations {
             };
         };
     };
-    committee_run_api_committee_run_post: {
+    cash_deposit_api_cash__currency__deposit_post: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                currency: string;
+            };
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
-                "application/json": components["schemas"]["CommitteeRunRequest"];
+                "application/json": components["schemas"]["CashWriteRequest"];
             };
         };
         responses: {
@@ -2710,7 +3881,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommitteeRunResponse"];
+                    "application/json": components["schemas"]["WriteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2724,16 +3895,20 @@ export interface operations {
             };
         };
     };
-    committee_status_api_committee__task_id__get: {
+    cash_withdraw_api_cash__currency__withdraw_post: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                task_id: string;
+                currency: string;
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CashWriteRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -2741,71 +3916,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommitteeStatusResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    committee_audit_meta_api_committee__task_id__audit_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    committee_live_api_committee_live__task_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["WriteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2951,18 +4062,16 @@ export interface operations {
             };
         };
     };
-    cash_deposit_api_cash__currency__deposit_post: {
+    committee_run_api_committee_run_post: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                currency: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
-                "application/json": components["schemas"]["CashWriteRequest"];
+                "application/json": components["schemas"]["CommitteeRunRequest"];
             };
         };
         responses: {
@@ -2972,7 +4081,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WriteResponse"];
+                    "application/json": components["schemas"]["CommitteeRunResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2986,7 +4095,206 @@ export interface operations {
             };
         };
     };
-    get_jobs_status_api_jobs_status_get: {
+    committee_status_api_committee__task_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitteeStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    committee_audit_meta_api_committee__task_id__audit_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    committee_live_api_committee_live__task_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    committee_prepare_api_committee_prepare_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommitteePrepareRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    committee_save_api_committee_save_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommitteeSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    events_recent_api_events_recent_get: {
+        parameters: {
+            query?: {
+                /** @description 时间窗（小时），默认 24h */
+                hours?: number;
+                min_severity?: "low" | "mid" | "high";
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventsRecentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    events_check_api_events_check_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -3001,7 +4309,484 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["JobsStatusResponse"];
+                    "application/json": components["schemas"]["EventCheckResponse"];
+                };
+            };
+        };
+    };
+    commsec_preview_api_commsec_preview_get: {
+        parameters: {
+            query?: {
+                lookback_days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommsecPreviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    commsec_apply_api_commsec_apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommsecApplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommsecApplyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_trade_api_trades_record_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordTradeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_trades_api_trades_get: {
+        parameters: {
+            query?: {
+                /** @description 最近 N 笔，最多 500 */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TradesListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_trade_status_api_trades__trade_id__status_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trade_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Body_patch_trade_status_api_trades__trade_id__status_patch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skill_doctor_api_doctor_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    skill_status_api_skill_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    skill_strategy_api_skill_strategy_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    skill_history_api_skill_history_get: {
+        parameters: {
+            query?: {
+                n?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skill_what_if_api_skill_what_if_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SkillWhatIfRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skill_buy_api_skill_buy_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillBuyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skill_sell_api_skill_sell_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillSellRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skill_deposit_api_skill_deposit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillCashRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skill_withdraw_api_skill_withdraw_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillCashRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skill_delete_holding_api_skill_delete_holding_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillDeleteHoldingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -3026,103 +4811,11 @@ export interface operations {
             };
         };
     };
-    get_regime_api_regime__symbol__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                symbol: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RegimeResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_dreams_state_api_dreams_state_get: {
+    get_fresh_insights_api_insights_fresh_get: {
         parameters: {
             query?: {
-                event_limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DreamsStateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_pnl_history_api_pnl_history_get: {
-        parameters: {
-            query?: {
-                /** @description 返回最近 N 条快照 */
-                since?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PnLHistoryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_committee_sessions_api_committee_sessions_get: {
-        parameters: {
-            query?: {
+                /** @description 只返回 N 小时内新写入的 */
+                since_hours?: number;
                 limit?: number;
             };
             header?: never;
@@ -3137,7 +4830,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommitteeSessionsResponse"];
+                    "application/json": components["schemas"]["FreshInsightsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3147,6 +4840,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_reengagement_alerts_api_reengagement_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReengagementResponse"];
+                };
+            };
+        };
+    };
+    get_jobs_status_api_jobs_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobsStatusResponse"];
                 };
             };
         };
@@ -3233,6 +4966,41 @@ export interface operations {
             };
         };
     };
+    get_tool_calls_api_agents_tool_calls_get: {
+        parameters: {
+            query?: {
+                since?: number;
+                /** @description 过滤特定资产 symbol */
+                asset?: string | null;
+                /** @description 过滤特定 agent role */
+                role?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ToolCallsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_verdict_review_data_api_verdict_review_data_get: {
         parameters: {
             query?: {
@@ -3304,34 +5072,10 @@ export interface operations {
             };
         };
     };
-    get_regime_rules_api_regime_rules_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RegimeRulesResponse"];
-                };
-            };
-        };
-    };
-    get_tool_calls_api_agents_tool_calls_get: {
+    list_committee_sessions_api_committee_sessions_get: {
         parameters: {
             query?: {
-                since?: number;
-                /** @description 过滤特定资产 symbol */
-                asset?: string | null;
-                /** @description 过滤特定 agent role */
-                role?: string | null;
+                limit?: number;
             };
             header?: never;
             path?: never;
@@ -3345,7 +5089,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ToolCallsResponse"];
+                    "application/json": components["schemas"]["CommitteeSessionsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3391,20 +5135,16 @@ export interface operations {
             };
         };
     };
-    cash_withdraw_api_cash__currency__withdraw_post: {
+    get_regime_api_regime__symbol__get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                currency: string;
+                symbol: string;
             };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CashWriteRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -3412,7 +5152,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WriteResponse"];
+                    "application/json": components["schemas"]["RegimeResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3426,10 +5166,30 @@ export interface operations {
             };
         };
     };
-    commsec_preview_api_commsec_preview_get: {
+    get_regime_rules_api_regime_rules_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegimeRulesResponse"];
+                };
+            };
+        };
+    };
+    get_dreams_state_api_dreams_state_get: {
         parameters: {
             query?: {
-                lookback_days?: number;
+                event_limit?: number;
             };
             header?: never;
             path?: never;
@@ -3443,7 +5203,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommsecPreviewResponse"];
+                    "application/json": components["schemas"]["DreamsStateResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3457,7 +5217,90 @@ export interface operations {
             };
         };
     };
-    commsec_apply_api_commsec_apply_post: {
+    get_pnl_history_api_pnl_history_get: {
+        parameters: {
+            query?: {
+                /** @description 返回最近 N 条快照 */
+                since?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PnLHistoryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_outperform_events_api_outperform_events_get: {
+        parameters: {
+            query?: {
+                since?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutperformEventsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_config_api_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigResponse"];
+                };
+            };
+        };
+    };
+    put_config_api_config_put: {
         parameters: {
             query?: never;
             header?: never;
@@ -3466,7 +5309,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CommsecApplyRequest"];
+                "application/json": components["schemas"]["ConfigUpdateRequest"];
             };
         };
         responses: {
@@ -3476,7 +5319,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommsecApplyResponse"];
+                    "application/json": components["schemas"]["ConfigResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_config_api_config__key__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigResponse"];
                 };
             };
             /** @description Validation Error */
