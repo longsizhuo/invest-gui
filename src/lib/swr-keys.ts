@@ -150,6 +150,12 @@ export const SWR_KEYS = {
    */
   USER_WEALTH_CONTEXT: "/api/user/wealth_context",
 
+  // ─── 委员会配置（config-via-API，ADR-017）──────────────────────────────────
+  /** GET /api/config —— 白名单 tunable 当前生效值（+ overridden + 元信息）。
+   *  PUT /api/config {key,value} 改一条；DELETE /api/config/{key} 回退默认。
+   *  落盘持久、优先级高于 env。GUI「委员会配置」区 + skill config 共用。 */
+  CONFIG: "/api/config",
+
   // ─── 事件感知层（ADR-006）—— Events Tab 用 ────────────────────────────────
   /** GET /api/events/recent —— 列最近 N 小时事件（severity desc）。
    *

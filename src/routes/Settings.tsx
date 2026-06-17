@@ -37,6 +37,18 @@ type UserProfile = {
   wealth_context?: WealthContext | null;
 };
 
+// config-via-API（ADR-017）：白名单 tunable 行为开关
+type ConfigItem = {
+  key: string;
+  value: boolean | string;
+  overridden: boolean;
+  type: string; // "bool" | "enum"
+  label: string;
+  help: string;
+  choices?: string[] | null;
+};
+type ConfigResponse = { items: ConfigItem[] };
+
 export default function Settings() {
   const { data: user, error, isLoading, mutate } = useSWR<UserProfile>(
     SWR_KEYS.USER,
@@ -289,6 +301,9 @@ export default function Settings() {
         </form>
       </Card>
 
+      {/* 委员会配置（config-via-API，ADR-017）*/}
+      <CommitteeConfigCard />
+
       {/* 教学：为什么需要这些字段 */}
       <Card>
         <h2 className="text-sm font-semibold mb-2 text-[var(--text-tertiary)] uppercase tracking-wide">
@@ -320,5 +335,86 @@ export default function Settings() {
         </div>
       </Card>
     </div>
+  );
+}
+
+/**
+ * 委员会配置（config-via-API，ADR-017）—— 运行时可调的白名单行为开关。
+ * 落盘 memory/.state/config_overrides.json，优先级高于 env，web/cron/skill 三进程共读。
+ * agent 等价用 `skill config [--set K V] [--clear K]`。
+ */
+function CommitteeConfigCard() {
+  const { data, mutate } = useSWR<ConfigResponse>(SWR_KEYS.CONFIG, fetcher);
+  const { push: showToast } = useToast();
+  const [busy, setBusy] = useState<string | null>(null);
+
+  async function change(key: string, value: boolean | string) {
+    setBusy(key);
+    try {
+      await putJSON<{ key: string; value: boolean | string }, ConfigResponse>(
+        SWR_KEYS.CONFIG,
+        { key, value },
+      );
+      await mutate();
+      showToast("已保存。下次跑委员会即生效（三路径共读）。", "info");
+    } catch (e) {
+      showToast(`保存失败: ${e instanceof Error ? e.message : String(e)}`, "urgent");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const items = data?.items ?? [];
+
+  return (
+    <Card>
+      <header className="mb-4">
+        <h2 className="text-base font-semibold">委员会配置</h2>
+        <p className="text-xs text-[var(--text-tertiary)] mt-1">
+          运行时行为开关（落盘持久、优先级高于环境变量；agent 等价用{" "}
+          <code className="font-mono">skill config</code>）。单资产 / 刻意集中策略可在这里
+          关掉「集中度减仓」纠缠。
+        </p>
+      </header>
+
+      <div className="space-y-4">
+        {items.length === 0 && (
+          <p className="text-sm text-[var(--text-tertiary)]">加载中…</p>
+        )}
+        {items.map((it) => (
+          <Field key={it.key} label={it.label} hint={it.help}>
+            {it.type === "enum" && it.choices ? (
+              <select
+                className={selectClass}
+                value={String(it.value)}
+                disabled={busy === it.key}
+                onChange={(e) => change(it.key, e.target.value)}
+              >
+                {it.choices.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <select
+                className={selectClass}
+                value={it.value ? "true" : "false"}
+                disabled={busy === it.key}
+                onChange={(e) => change(it.key, e.target.value === "true")}
+              >
+                <option value="true">开启</option>
+                <option value="false">关闭</option>
+              </select>
+            )}
+            {it.overridden && (
+              <span className="text-xs text-[var(--accent)] mt-1 inline-block">
+                已自定义（覆盖默认）
+              </span>
+            )}
+          </Field>
+        ))}
+      </div>
+    </Card>
   );
 }
