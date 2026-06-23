@@ -21,3 +21,8 @@ vite.config.d.ts
 *.log
 npm-debug.log*
 pnpm-debug.log*
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules

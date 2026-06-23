@@ -1,0 +1,36 @@
+{
+  "pkg": "invest-gui",
+  "globalName": "InvestGui",
+  "shape": "package",
+  "projectId": "b5490dce-00a9-49cb-9905-3034d46f3205",
+  "srcDir": "src/components",
+  "tsconfig": "tsconfig.json",
+  "componentSrcMap": { "ToastProvider": null },
+  "cssEntry": "ds-tailwind.css",
+  "extraEntries": ["./.design-sync/preview-providers.tsx"],
+  "provider": { "component": "DSPreviewProvider" },
+  "readmeHeader": ".design-sync/conventions.md",
+  "overrides": {
+    "Button": { "cardMode": "column" },
+    "Card": { "cardMode": "column" },
+    "Row": { "cardMode": "column" },
+    "Field": { "cardMode": "column" },
+    "Tabs": { "cardMode": "column" },
+    "CashSummaryCard": { "cardMode": "column" },
+    "HoldingCard": { "cardMode": "column" },
+    "CommitteeRolesPanel": { "cardMode": "column" },
+    "PipelineFlow": { "cardMode": "column" },
+    "DashboardHero": { "cardMode": "column" },
+    "SymbolSearch": { "cardMode": "column" },
+
+    "Dialog": { "cardMode": "single", "primaryStory": "Confirm" },
+    "AllocationsDialog": { "cardMode": "single", "primaryStory": "Open" },
+    "AssetDialog": { "cardMode": "single", "primaryStory": "Edit" },
+    "CashDialog": { "cardMode": "single", "primaryStory": "Deposit" },
+    "GoldOffsetDialog": { "cardMode": "single", "primaryStory": "Open" },
+    "GoldTradeDialog": { "cardMode": "single", "primaryStory": "Buy" },
+    "HoldingDialog": { "cardMode": "single", "primaryStory": "Edit" },
+    "RecordModal": { "cardMode": "single", "primaryStory": "Buy" }
+  },
+  "buildCmd": "bash .design-sync/build-css.sh"
+}
