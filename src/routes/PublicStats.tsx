@@ -57,27 +57,39 @@ interface PublicStatsResponse {
   generated_at: string;
 }
 
-/** 敏感字段黑名单：后端脱敏管道必须过滤掉这些字段 */
-const SENSITIVE_FIELD_NAMES = [
-  "symbol", "threshold", "holdings", "position", "alloc_cny",
-  "cost", "ticker", "security", "asset",
-];
+// 白名单：公开页响应的字段集合是完全已知的，用 allowlist 比 denylist 子串匹配安全得多
+// （黑名单永远会漏 units / balance / net / pnl / amount / value 这类没列进去的字段）。
+const ALLOWED_TOP_KEYS = new Set(["30d", "90d", "all", "generated_at"]);
+const ALLOWED_WINDOW_KEYS = new Set([
+  "hit_rate", "sample_size",
+  "bullish_hit_rate", "bearish_hit_rate", "hold_hit_rate",
+  "bullish_n", "bearish_n", "hold_n",
+]);
 
 /**
- * 校验响应数据不含敏感字段名（递归检查所有 key）
- * 如果发现敏感字段，抛出错误让 UI 显示安全警告
+ * 校验响应只含白名单字段。出现任何未知字段直接拒渲染——这是公开页对外不泄露
+ * 持仓/金额细节的最后一道闸（即便后端脱敏管道回归，多出来的字段也进不了 UI）。
  */
-function assertNoSensitiveFields(data: unknown, path = ""): void {
-  if (data == null || typeof data !== "object") return;
-  for (const key of Object.keys(data as object)) {
-    const fullPath = path ? `${path}.${key}` : key;
-    if (SENSITIVE_FIELD_NAMES.some((s) => key.toLowerCase().includes(s))) {
+function assertOnlyAllowedFields(data: unknown): void {
+  if (data == null || typeof data !== "object") {
+    throw new Error("后端脱敏管道异常：响应不是对象，已阻止渲染。");
+  }
+  for (const [key, val] of Object.entries(data as Record<string, unknown>)) {
+    if (!ALLOWED_TOP_KEYS.has(key)) {
       throw new Error(
-        `后端脱敏管道未生效：响应字段 "${fullPath}" 含敏感信息，已阻止渲染。` +
-        `请检查 /api/stats/public 是否正确过滤了 symbol / threshold / 持仓字段。`,
+        `后端脱敏管道异常：响应含未知字段 "${key}"，已阻止渲染（公开页仅允许聚合命中率字段）。`,
       );
     }
-    assertNoSensitiveFields((data as Record<string, unknown>)[key], fullPath);
+    // 每个时间窗口对象只允许已知的命中率/样本量数值字段
+    if (key !== "generated_at" && val != null && typeof val === "object") {
+      for (const wk of Object.keys(val as Record<string, unknown>)) {
+        if (!ALLOWED_WINDOW_KEYS.has(wk)) {
+          throw new Error(
+            `后端脱敏管道异常：窗口字段含未知键 "${wk}"，已阻止渲染。`,
+          );
+        }
+      }
+    }
   }
 }
 
@@ -110,8 +122,8 @@ export default function PublicStats() {
         return res.json();
       })
       .then((json: unknown) => {
-        // 安全校验：如果含敏感字段直接报错
-        assertNoSensitiveFields(json);
+        // 安全校验：只允许白名单字段，多一个未知字段就拒渲染
+        assertOnlyAllowedFields(json);
         setData(json as PublicStatsResponse);
         setLoading(false);
       })

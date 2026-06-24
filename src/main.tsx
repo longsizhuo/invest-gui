@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import App from "./App";
 import { PrivacyProvider } from "./lib/privacy";
 import { ToastProvider } from "./components/Toast";
@@ -33,14 +33,41 @@ function Loading() {
   );
 }
 
+/**
+ * 公开页布局 —— 极简外壳：base 背景 + 居中 main + 最小 footer。
+ *
+ * 关键：**不含** App 的 NudgesInit / 私有导航。公开访客（/public/stats，
+ * Caddy 放行、不走 CF Access）因此不会触发 /api/insights/fresh、
+ * /api/reengagement 等私有端点，也看不到可点进的私有页导航（issue #5）。
+ */
+function PublicLayout() {
+  return (
+    <div className="min-h-screen flex flex-col bg-[var(--surface-base)]">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-10">
+        <Outlet />
+      </main>
+      <footer className="border-t border-[var(--border-subtle)] px-6 py-4 text-xs text-[var(--text-tertiary)] text-center">
+        {import.meta.env.VITE_INSTANCE_NAME ?? "openInvest"} · 公开命中率 · MIT
+      </footer>
+    </div>
+  );
+}
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     {/* ToastProvider 最外层：useNudges 和任何子组件都能调 useToast */}
     <ToastProvider>
       <PrivacyProvider>
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Suspense fallback={<Loading />}>
             <Routes>
+              {/* 公开命中率页：独立精简布局（PublicLayout），不挂 App 外壳。
+                  避免公开访客触发 NudgesInit 的私有端点（/api/insights/fresh、
+                  /api/reengagement）或看到可点进的私有导航；本页只调
+                  /api/stats/public（不走 CF Access，后续 Caddy 放行）。 —— issue #5 */}
+              <Route path="/public/stats" element={<PublicLayout />}>
+                <Route index element={<PublicStats />} />
+              </Route>
               <Route path="/" element={<App />}>
                 <Route index element={<Dashboard />} />
                 <Route path="history" element={<History />} />
@@ -49,8 +76,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route path="system" element={<System />} />
                 {/* 批量录入：/holdings/import */}
                 <Route path="holdings/import" element={<BulkImport />} />
-                {/* 公开命中率页：/public/stats（不走 CF Access，后续 Caddy 放行） */}
-                <Route path="public/stats" element={<PublicStats />} />
                 {/* 设置：唯一 GUI-only 数据入口（wealth_context 等 agent 拿不到的字段）*/}
                 <Route path="settings" element={<Settings />} />
                 {/* /transparency 已并入 /committee（书签兼容） */}
