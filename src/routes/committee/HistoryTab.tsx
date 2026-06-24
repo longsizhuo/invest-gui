@@ -9,6 +9,7 @@ import { SWR_KEYS } from "../../lib/swr-keys";
 import { VerdictBadge } from "../../components/StatusBadge";
 import { CommitteeRolesPanel } from "../../components/CommitteeRolesPanel";
 import { verdictAction } from "../../lib/format";
+import { usePrivacy } from "../../lib/privacy";
 import type { RoleBrief } from "../../lib/parseCommitteeMd";
 
 /** 从 sections 数组里按 title 找指定角色，抽 SIGNAL/STRENGTH/ONE_LINER */
@@ -48,6 +49,7 @@ export function HistoryTab() {
     fetcher,
   );
   const [selected, setSelected] = useState<{ date: string; symbol: string } | null>(null);
+  const { enabled: privacyOn } = usePrivacy();
 
   if (isLoading)
     return <div className="text-[var(--text-secondary)]">加载中…</div>;
@@ -96,13 +98,14 @@ export function HistoryTab() {
                       {s.date}
                     </td>
                     <td className="px-2 py-1 font-mono text-[var(--text-primary)]">
-                      {s.symbol}
+                      {/* 旧 session 落盘用磁盘文件名形态（002185_SZ）；展示统一 canonical 点号 */}
+                      {s.symbol.replace(/_/g, ".")}
                     </td>
                     <td className="px-2 py-1">
                       <VerdictBadge verdict={s.verdict ?? null} />
                     </td>
                     <td className="px-2 py-1 text-right text-[var(--text-secondary)] font-mono">
-                      {s.confidence ?? "—"}
+                      {s.confidence != null ? `${(s.confidence * 100).toFixed(0)}%` : "—"}
                     </td>
                     <td
                       className={`px-2 py-1 text-right font-mono ${
@@ -115,10 +118,12 @@ export function HistoryTab() {
                               : "text-[var(--text-primary)]"
                       }`}
                     >
-                      {s.suggested_alloc_cny != null
-                        ? (s.suggested_alloc_cny > 0 ? "+" : "") +
-                          s.suggested_alloc_cny.toLocaleString()
-                        : "—"}
+                      {s.suggested_alloc_cny == null
+                        ? "—"
+                        : privacyOn
+                          ? "±●●●"
+                          : (s.suggested_alloc_cny > 0 ? "+" : "") +
+                            s.suggested_alloc_cny.toLocaleString()}
                     </td>
                   </tr>
                 );
@@ -156,13 +161,15 @@ function CommitteeDetail({ date, symbol }: { date: string; symbol: string }) {
     SWR_KEYS.committeeSessionDetail(date, symbol),
     fetcher,
   );
+  const { enabled: privacyOn } = usePrivacy();
   if (!data)
     return <div className="text-[var(--text-tertiary)]">加载…</div>;
 
   const parsed = parseCommitteeMarkdown(data.content);
 
   // F2: 中文动作行（"建议减仓 ¥15,000"）—— Tester 一票否决：英文 TRIM 看不懂
-  const { action, tone } = verdictAction(parsed.verdict, parsed.allocCNY);
+  // privacyOn 时金额脱敏成 ¥●●●（建议额量级会反映可投本金）
+  const { action, tone } = verdictAction(parsed.verdict, parsed.allocCNY, privacyOn);
   const toneClass = {
     pos: "text-pos",
     neg: "text-neg",
