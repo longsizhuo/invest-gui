@@ -314,20 +314,24 @@ function ManualImporter({ onToast }: { onToast: (msg: string, sev?: "info" | "wa
     setKeys((prev) => [...prev, newKey]);
   }
 
+  // statuses 以 row 的稳定 id（keys[idx]）为键，不能用数组下标——否则删中间行后
+  // 数组重排，残留的下标键与行错位（OK/失败 状态贴到错误的行上）。
   function removeRow(idx: number) {
+    const k = keys[idx];
     setRows((prev) => prev.filter((_, i) => i !== idx));
     setKeys((prev) => prev.filter((_, i) => i !== idx));
     setStatuses((prev) => {
       const next = new Map(prev);
-      next.delete(idx);
+      next.delete(k);
       return next;
     });
   }
 
   function updateRow(idx: number, patch: Partial<RawRow>) {
+    const k = keys[idx];
     setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
     // 清空该行状态（用户修改后重置）
-    setStatuses((prev) => { const n = new Map(prev); n.delete(idx); return n; });
+    setStatuses((prev) => { const n = new Map(prev); n.delete(k); return n; });
   }
 
   async function handleSubmit() {
@@ -337,14 +341,15 @@ function ManualImporter({ onToast }: { onToast: (msg: string, sev?: "info" | "wa
 
     for (let i = 0; i < rows.length; i++) {
       const raw = rows[i];
+      const k = keys[i]; // 稳定 id 作 status 键
       const validErr = validateRow(raw);
       if (validErr) {
-        setStatuses((prev) => new Map(prev).set(i, { status: "error", error: validErr }));
+        setStatuses((prev) => new Map(prev).set(k, { status: "error", error: validErr }));
         errCount++;
         continue;
       }
 
-      setStatuses((prev) => new Map(prev).set(i, { status: "submitting" }));
+      setStatuses((prev) => new Map(prev).set(k, { status: "submitting" }));
 
       try {
         const req: TradeRecordRequest = {
@@ -356,11 +361,11 @@ function ManualImporter({ onToast }: { onToast: (msg: string, sev?: "info" | "wa
         const priceNum = parseFloat(raw.price);
         if (raw.price.trim() && !isNaN(priceNum)) req.price = priceNum;
         await recordTrade(req);
-        setStatuses((prev) => new Map(prev).set(i, { status: "ok" }));
+        setStatuses((prev) => new Map(prev).set(k, { status: "ok" }));
         okCount++;
       } catch (err) {
         const msg = err instanceof ApiError ? err.detail : String(err);
-        setStatuses((prev) => new Map(prev).set(i, { status: "error", error: msg }));
+        setStatuses((prev) => new Map(prev).set(k, { status: "error", error: msg }));
         errCount++;
       }
     }
@@ -403,7 +408,7 @@ function ManualImporter({ onToast }: { onToast: (msg: string, sev?: "info" | "wa
           </thead>
           <tbody>
             {rows.map((row, i) => {
-              const st = statuses.get(i);
+              const st = statuses.get(keys[i]);
               const rowBg =
                 st?.status === "ok"
                   ? "bg-[var(--pos)]/10"
@@ -518,11 +523,15 @@ function ManualImporter({ onToast }: { onToast: (msg: string, sev?: "info" | "wa
           <p className="text-xs font-semibold text-neg">失败行详情：</p>
           {Array.from(statuses.entries())
             .filter(([, v]) => v.status === "error" && v.error)
-            .map(([idx, v]) => (
-              <p key={idx} className="text-xs text-[var(--text-secondary)] font-mono">
-                第 {idx + 1} 行：{v.error}
-              </p>
-            ))}
+            .map(([k, v]) => {
+              const pos = keys.indexOf(k); // 稳定 id → 当前行号
+              if (pos < 0) return null; // 行已删除
+              return (
+                <p key={k} className="text-xs text-[var(--text-secondary)] font-mono">
+                  第 {pos + 1} 行：{v.error}
+                </p>
+              );
+            })}
         </div>
       )}
 
