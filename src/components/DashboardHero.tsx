@@ -188,12 +188,12 @@ export function DashboardHero() {
                 {renderAmount(total?.holdings_total)}
               </span>
             </div>
-            {total?.fx_rates && (
-              <div className="text-[var(--text-tertiary)] text-xs">                {Object.entries(total.fx_rates)
+            {/* 纯 CNY 组合（filter 后无外币）不渲染该块，避免空卡 */}
+            {Object.entries(total?.fx_rates ?? {}).some(([k]) => k !== "CNY") && (
+              <div className="text-[var(--text-tertiary)] text-xs">
+                {Object.entries(total?.fx_rates ?? {})
                   .filter(([k]) => k !== "CNY")
-                  .map(([k, v]) =>
-                    v != null ? `${k}=${v.toFixed(2)}` : `${k}=—`,
-                  )
+                  .map(([k, v]) => (v != null ? `${k}=${v.toFixed(2)}` : `${k}=—`))
                   .join("  ·  ")}
               </div>
             )}
@@ -218,6 +218,7 @@ function CommitteeMini() {
     fetcher,
     { refreshInterval: 120_000 },
   );
+  const { enabled: privacyOn } = usePrivacy();
 
   const latest = data?.sessions?.[0];
 
@@ -246,6 +247,7 @@ function CommitteeMini() {
   const { action, tone } = verdictAction(
     latest.verdict,
     latest.suggested_alloc_cny,
+    privacyOn,
   );
   const toneClass = {
     pos: "text-pos",

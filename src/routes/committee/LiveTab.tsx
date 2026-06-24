@@ -96,14 +96,24 @@ export function LiveTab() {
               </div>
             )}
 
-            {status?.status === "done" && status.result && (
-              <div className="border border-[var(--border-subtle)] bg-[var(--surface-base)] p-3">
-                <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2">
-                  daily_report 返回
+            {status?.status === "done" && (
+              <div className="border border-[var(--border-subtle)] bg-[var(--surface-base)] p-3 space-y-2">
+                {/* 人话总结优先；原始 daily_report JSON 收进 details（开发/排查用），
+                    不再默认 dump 一屏 JSON（issue #7）。完整 verdict 卡片见「历史归档」子页。 */}
+                <p className="text-sm text-pos">✓ 委员会已完成 · 决议已落盘 memory/.committee/</p>
+                <p className="text-xs text-[var(--text-tertiary)]">
+                  完整 verdict 卡片见「历史归档」子页。
                 </p>
-                <pre className="text-xs text-[var(--text-primary)] whitespace-pre-wrap break-all max-h-96 overflow-auto font-mono">
-                  {JSON.stringify(status.result, null, 2)}
-                </pre>
+                {status.result != null && (
+                  <details className="border border-[var(--border-subtle)]">
+                    <summary className="px-3 py-2 cursor-pointer text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]">
+                      查看原始 daily_report JSON
+                    </summary>
+                    <pre className="px-3 pb-3 text-xs text-[var(--text-primary)] whitespace-pre-wrap break-all max-h-96 overflow-auto font-mono">
+                      {JSON.stringify(status.result, null, 2)}
+                    </pre>
+                  </details>
+                )}
               </div>
             )}
 
