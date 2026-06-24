@@ -134,7 +134,8 @@ function JobsTab() {
 // =================== Regime ===================
 
 function RegimeTab() {
-  const [symbol, setSymbol] = useState("NDQ.AX");
+  // 默认空，等用户输入再查（旧默认硬编码作者遗留的 NDQ.AX）；placeholder 已给示例
+  const [symbol, setSymbol] = useState("");
   const { data, error, isLoading } = useSWR<RegimeResponse>(
     symbol ? `/api/regime/${encodeURIComponent(symbol)}` : null,
     fetcher,
@@ -188,6 +189,23 @@ function RegimeTab() {
 
 // =================== Insights ===================
 
+/**
+ * insight 元信息行（confidence · count）。
+ * 后端无该字段时**整行隐藏**，不再显示占位 "?"（issue #6）。
+ */
+function InsightMeta({ metadata }: { metadata: Record<string, unknown> }) {
+  const conf = metadata.confidence;
+  const cnt = metadata.count;
+  if (conf == null && cnt == null) return null;
+  return (
+    <span className="ml-2 text-xs text-[var(--text-tertiary)]">
+      {conf != null && `confidence ${String(conf)}`}
+      {conf != null && cnt != null && " · "}
+      {cnt != null && `count ${String(cnt)}`}
+    </span>
+  );
+}
+
 function InsightsTab() {
   const { data, error, isLoading } = useSWR<InsightsResponse>(SWR_KEYS.INSIGHTS, fetcher);
   if (isLoading) return <div className="text-[var(--text-secondary)]">加载中...</div>;
@@ -212,10 +230,7 @@ function InsightsTab() {
         <details key={it.slug} className="border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-4" open>
           <summary className="cursor-pointer">
             <span className="font-semibold text-[var(--accent)]">{it.slug}</span>
-            <span className="ml-2 text-xs text-[var(--text-tertiary)]">
-              confidence {String((it.metadata as Record<string, unknown>).confidence ?? "?")} ·
-              count {String((it.metadata as Record<string, unknown>).count ?? "?")}
-            </span>
+            <InsightMeta metadata={it.metadata as Record<string, unknown>} />
           </summary>
           <pre className="mt-3 text-xs text-[var(--text-primary)] whitespace-pre-wrap">{it.body}</pre>
         </details>
@@ -310,6 +325,10 @@ function PnLTab() {
   // 简单倒序展示，配合数字图标颜色
   const points = [...data.points].reverse(); // 最新在前
 
+  // NDQ%/Gold% 是旧组合遗留列；当前持仓无这些基准时整列隐藏（不显示恒「—」列，issue #6）
+  const hasNdq = points.some((p) => (p as { ndq_pnl_pct?: number }).ndq_pnl_pct != null);
+  const hasGold = points.some((p) => (p as { gold_pnl_pct?: number }).gold_pnl_pct != null);
+
   return (
     <div className="space-y-3">
       <p className="text-xs text-[var(--text-tertiary)]">
@@ -321,8 +340,8 @@ function PnLTab() {
             <tr>
               <th className="px-3 py-2 text-left">时间</th>
               <th className="px-3 py-2 text-right">总浮盈 %</th>
-              <th className="px-3 py-2 text-right">NDQ %</th>
-              <th className="px-3 py-2 text-right">Gold %</th>
+              {hasNdq && <th className="px-3 py-2 text-right">NDQ %</th>}
+              {hasGold && <th className="px-3 py-2 text-right">Gold %</th>}
             </tr>
           </thead>
           <tbody>
@@ -336,12 +355,16 @@ function PnLTab() {
                   <td className={`px-3 py-1 text-right ${total >= 0 ? "text-pos" : "text-neg"}`}>
                     {total >= 0 ? "+" : ""}{total.toFixed(2)}
                   </td>
-                  <td className="px-3 py-1 text-right text-[var(--text-secondary)]">
-                    {ndq != null ? `${ndq >= 0 ? "+" : ""}${ndq.toFixed(2)}` : "—"}
-                  </td>
-                  <td className="px-3 py-1 text-right text-[var(--text-secondary)]">
-                    {gold != null ? `${gold >= 0 ? "+" : ""}${gold.toFixed(2)}` : "—"}
-                  </td>
+                  {hasNdq && (
+                    <td className="px-3 py-1 text-right text-[var(--text-secondary)]">
+                      {ndq != null ? `${ndq >= 0 ? "+" : ""}${ndq.toFixed(2)}` : "—"}
+                    </td>
+                  )}
+                  {hasGold && (
+                    <td className="px-3 py-1 text-right text-[var(--text-secondary)]">
+                      {gold != null ? `${gold >= 0 ? "+" : ""}${gold.toFixed(2)}` : "—"}
+                    </td>
+                  )}
                 </tr>
               );
             })}
