@@ -122,10 +122,14 @@ export const SWR_KEYS = {
   STRATEGY_ASSET: "/api/strategy/asset",
   /** POST /api/holdings —— 新增/覆盖 holding */
   HOLDINGS_POST: "/api/holdings",
-  /** POST /api/deposit —— 入金 */
+  /** POST /api/deposit —— 入金（legacy，仅 cny/aud；新代码走 cashDeposit 任意币种） */
   DEPOSIT: "/api/deposit",
-  /** POST /api/withdraw —— 出金 */
+  /** POST /api/withdraw —— 出金（legacy，仅 cny/aud） */
   WITHDRAW: "/api/withdraw",
+  /** POST /api/cash/{currency}/deposit —— v2 通用任意币种入金（body {amount}） */
+  cashDeposit: (currency: string) => `/api/cash/${encodeURIComponent(currency)}/deposit`,
+  /** POST /api/cash/{currency}/withdraw —— v2 通用任意币种出金 */
+  cashWithdraw: (currency: string) => `/api/cash/${encodeURIComponent(currency)}/withdraw`,
   /** POST /api/gold/buy / /api/gold/sell —— 黄金买卖 */
   GOLD_BUY: "/api/gold/buy",
   GOLD_SELL: "/api/gold/sell",

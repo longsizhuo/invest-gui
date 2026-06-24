@@ -27,6 +27,8 @@ export function useCommitteeLive(taskId: string | null) {
       return;
     }
     setConnState("connecting");
+    // 切到新 taskId 时清掉上一轮 status，否则新一轮首帧到来前会泄漏上轮的 done/result
+    setStatus(null);
     const es = new EventSource(`/api/committee/live/${encodeURIComponent(taskId)}`);
     esRef.current = es;
 
@@ -47,10 +49,24 @@ export function useCommitteeLive(taskId: string | null) {
       setConnState("closed");
       es.close();
     };
+    // 后端业务终态错误走具名 event:error（带 data）；浏览器连接级 error（瞬断，无 data）
+    // 会派发到同一个 "error" 监听器——这种必须交给 es.onerror 的自动重连，绝不能 close，
+    // 否则一次网络抖动就把还在跑的委员会直播永久关掉（keepalive 形同虚设）。
+    const handleServerError = (e: Event) => {
+      const data = (e as MessageEvent).data;
+      if (!data) return;
+      try {
+        setStatus(JSON.parse(data));
+      } catch {
+        return;
+      }
+      setConnState("closed");
+      es.close();
+    };
 
     es.addEventListener("progress", handleProgress);
     es.addEventListener("done", handleTerminal);
-    es.addEventListener("error", handleTerminal);
+    es.addEventListener("error", handleServerError);
     es.addEventListener("not_found", handleTerminal);
     es.addEventListener("timeout", handleTerminal);
 

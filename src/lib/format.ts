@@ -5,6 +5,29 @@ export function formatCNY(value: number | null | undefined): string {
   return `¥${value.toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+/**
+ * 按币种选符号格式化金额。CNY→¥、AUD→A$、其他→ "{CCY} {amount}"（不臆造符号，避免
+ * 把 AUD/USD 错标成 ¥）。流水里多币种交易必须走这个而非无脑 formatCNY。
+ */
+export function formatMoney(
+  value: number | null | undefined,
+  currency?: string | null,
+): string {
+  if (value == null) return "—";
+  const ccy = (currency ?? "CNY").toUpperCase();
+  if (ccy === "CNY") return formatCNY(value);
+  if (ccy === "AUD") return formatAUD(value);
+  return `${ccy} ${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+/** 数量/份额格式化：整数加千分位、非整数最多 4 位小数（消除 0.30000000000000004 这种噪音）。 */
+export function formatUnits(value: number | null | undefined): string {
+  if (value == null) return "—";
+  return Number.isInteger(value)
+    ? value.toLocaleString()
+    : value.toLocaleString(undefined, { maximumFractionDigits: 4 });
+}
+
 export function formatAUD(value: number | null | undefined): string {
   if (value == null) return "—";
   return `A$${value.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -113,12 +136,16 @@ export type VerdictTone = "pos" | "neg" | "warn" | "neutral";
 export function verdictAction(
   verdict: string | null | undefined,
   allocCNY: number | null | undefined,
+  masked = false,
 ): { action: string; tone: VerdictTone } {
   if (!verdict) return { action: "—", tone: "neutral" };
-  const amount =
-    allocCNY != null && allocCNY !== 0
-      ? `¥${Math.abs(allocCNY).toLocaleString()}`
-      : "";
+  // Number.isFinite 同时挡掉 null/undefined/NaN（旧代码只挡 null/0 → parse 失败会拼出 "¥NaN"）
+  const hasAmount = Number.isFinite(allocCNY) && allocCNY !== 0;
+  const amount = hasAmount
+    ? masked
+      ? "¥●●●"
+      : `¥${Math.abs(allocCNY as number).toLocaleString()}`
+    : "";
   switch (verdict.toUpperCase()) {
     case "BUY":
       return { action: amount ? `建议买入 ${amount}` : "建议买入", tone: "pos" };

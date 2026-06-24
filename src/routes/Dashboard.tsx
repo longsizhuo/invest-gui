@@ -23,6 +23,7 @@ import { OutperformShareCard } from "../components/OutperformShareCard";
 import { RecordModal } from "../components/RecordModal";
 import { VerdictBadge } from "../components/StatusBadge";
 import { verdictAction } from "../lib/format";
+import { usePrivacy } from "../lib/privacy";
 
 type DialogKind = null | "deposit" | "withdraw" | "gold_buy" | "gold_sell" | "gold_offset";
 
@@ -69,6 +70,10 @@ export default function Dashboard() {
 
   const realHoldings = data.holdings.filter((h) => !h.is_tracking_only);
   const trackingHoldings = data.holdings.filter((h) => h.is_tracking_only);
+  // 黄金按钮（浙商/CNY·g 等作者专属流程）仅在确实持金时显示，避免纯 A 股 fork 用户看到用不上的控件
+  const hasGold = data.holdings.some(
+    (h) => h.kind === "metal" || h.proxy_kind === "gold_cny_per_gram",
+  );
 
   const chartSymbols = data.holdings.slice(0, 4).map((h) => ({
     symbol: h.yfinance_proxy ?? h.symbol,
@@ -157,15 +162,19 @@ export default function Dashboard() {
           <Button variant="outline" onClick={() => setDialog("withdraw")}>
             取出现金
           </Button>
-          <Button variant="outline" onClick={() => setDialog("gold_buy")}>
-            记买金
-          </Button>
-          <Button variant="outline" onClick={() => setDialog("gold_sell")}>
-            记卖金
-          </Button>
-          <Button variant="ghost" onClick={() => setDialog("gold_offset")}>
-            校准黄金点差
-          </Button>
+          {hasGold && (
+            <>
+              <Button variant="outline" onClick={() => setDialog("gold_buy")}>
+                记买金
+              </Button>
+              <Button variant="outline" onClick={() => setDialog("gold_sell")}>
+                记卖金
+              </Button>
+              <Button variant="ghost" onClick={() => setDialog("gold_offset")}>
+                校准黄金点差
+              </Button>
+            </>
+          )}
         </div>
         <p className="text-xs text-[var(--text-tertiary)] mt-3">
           通用资产 CRUD（任意 yfinance symbol）见「策略」页
@@ -258,6 +267,7 @@ function RecentVerdicts({
     fetcher,
     { refreshInterval: 120_000 },
   );
+  const { enabled: privacyOn } = usePrivacy();
 
   if (isLoading || !data || data.count === 0) return null;
 
@@ -299,7 +309,7 @@ function RecentVerdicts({
           </thead>
           <tbody>
             {data.sessions.map((s: CommitteeSessionSummary, i: number) => {
-              const { action, tone } = verdictAction(s.verdict, s.suggested_alloc_cny);
+              const { action, tone } = verdictAction(s.verdict, s.suggested_alloc_cny, privacyOn);
               const toneClass = {
                 pos: "text-pos",
                 neg: "text-neg",

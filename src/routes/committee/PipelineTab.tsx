@@ -10,6 +10,7 @@ import {
   type CommitteeSessionDetail,
   type Strategy,
 } from "../../lib/api-client";
+import { usePrivacy } from "../../lib/privacy";
 import { SWR_KEYS } from "../../lib/swr-keys";
 import { PipelineFlow, type AgentNode, type PipelineStage } from "../../components/PipelineFlow";
 import { useLiveCommittee } from "../../lib/useLiveCommittee";
@@ -278,6 +279,7 @@ function VerdictResultCard({ status }: { status: { result?: unknown } }) {
     verdict?: { verdict?: string; confidence?: number; alloc_cny?: number; dominant_view?: string };
     debate_meta?: { final_round?: number; max_rounds?: number; converged?: boolean };
   } | null;
+  const { enabled: privacyOn } = usePrivacy();
   if (!result) return null;
   const v = result.verdict;
   const dm = result.debate_meta;
@@ -322,7 +324,7 @@ function VerdictResultCard({ status }: { status: { result?: unknown } }) {
                     : "text-[var(--text-secondary)]"
               }`}
             >
-              {v.alloc_cny > 0 ? "+" : ""}{v.alloc_cny.toLocaleString()}
+              {privacyOn ? "±●●●" : `${v.alloc_cny > 0 ? "+" : ""}${v.alloc_cny.toLocaleString()}`}
             </div>
           </div>
         )}

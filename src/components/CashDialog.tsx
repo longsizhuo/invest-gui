@@ -1,18 +1,23 @@
 import { useState } from "react";
 import { mutate } from "swr";
-import { ApiError, postJSON, type DepositRequest, type WriteResponse } from "../lib/api-client";
+import { ApiError, postJSON, type WriteResponse } from "../lib/api-client";
 import { SWR_KEYS } from "../lib/swr-keys";
 import { Dialog } from "./Dialog";
-import { Field, inputClass, selectClass } from "./Field";
+import { Field, inputClass } from "./Field";
 import { Button } from "./Button";
 
 /**
  * 存款 / 取款 通用对话框
  *
- * 提交成功后：
- * 1. 关闭对话框
- * 2. mutate /api/portfolio + /api/history 让 Dashboard / History 立即重拉
+ * 走 v2 通用端点 /api/cash/{currency}/deposit|withdraw —— 支持任意币种（后端只校验
+ * 3-5 位字母）。旧的 /api/deposit 只收 cny/aud，fork 用户的 US/HK/EU 资产填不了。
+ *
+ * 提交成功后 mutate /api/portfolio + /api/holdings + /api/history 让页面立即重拉。
  */
+
+/** 常见币种建议（datalist 提示，不限制取值） */
+const COMMON_CURRENCIES = ["CNY", "AUD", "USD", "HKD", "EUR", "GBP", "JPY", "SGD"];
+
 export function CashDialog({
   mode,
   open,
@@ -22,7 +27,7 @@ export function CashDialog({
   open: boolean;
   onClose: () => void;
 }) {
-  const [currency, setCurrency] = useState<"cny" | "aud">("cny");
+  const [currency, setCurrency] = useState("CNY");
   const [amount, setAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,12 +42,17 @@ export function CashDialog({
       setError("金额必须 > 0");
       return;
     }
+    const ccy = currency.trim().toUpperCase();
+    if (!/^[A-Z]{3,5}$/.test(ccy)) {
+      setError("币种须为 3-5 位字母，如 CNY / USD / AUD");
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const body: DepositRequest = { currency, amount: num };
-      const url = mode === "deposit" ? SWR_KEYS.DEPOSIT : SWR_KEYS.WITHDRAW;
-      await postJSON<DepositRequest, WriteResponse>(url, body);
+      const url =
+        mode === "deposit" ? SWR_KEYS.cashDeposit(ccy) : SWR_KEYS.cashWithdraw(ccy);
+      await postJSON<{ amount: number }, WriteResponse>(url, { amount: num });
       // 写成功 → 让 Dashboard / 通用持仓 / History 立即重拉
       await Promise.all([
         mutate(SWR_KEYS.PORTFOLIO),
@@ -62,17 +72,24 @@ export function CashDialog({
   return (
     <Dialog open={open} onClose={onClose} title={title}>
       <form onSubmit={onSubmit} className="space-y-4">
-        <Field label="币种">
-          <select
-            className={selectClass}
+        <Field label="币种" hint="任意币种（如 CNY / USD / AUD）">
+          <input
+            type="text"
+            list="cash-currency-options"
+            className={inputClass}
             value={currency}
-            onChange={(e) => setCurrency(e.target.value as "cny" | "aud")}
-          >
-            <option value="cny">CNY（人民币）</option>
-            <option value="aud">AUD（NDQ 子弹）</option>
-          </select>
+            onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+            placeholder="CNY"
+            maxLength={5}
+            required
+          />
+          <datalist id="cash-currency-options">
+            {COMMON_CURRENCIES.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
         </Field>
-        <Field label="金额" hint="正数；扣到负数会通过（用户调账场景）">
+        <Field label="金额" hint={mode === "deposit" ? "正数" : "正数；余额不足会被拒绝"}>
           <input
             type="number"
             inputMode="decimal"

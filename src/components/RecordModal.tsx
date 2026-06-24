@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { mutate } from "swr";
 import { recordTrade, ApiError } from "../lib/api-client";
 import type { TradeRecordRequest } from "../lib/api-client";
 import { SWR_KEYS } from "../lib/swr-keys";
 import { Dialog } from "./Dialog";
-import { Field, inputClass, selectClass } from "./Field";
+import { Field, inputClass } from "./Field";
 import { Button } from "./Button";
 import { useToast } from "./Toast";
 
@@ -47,6 +47,21 @@ export function RecordModal({
   const [error, setError] = useState<string | null>(null);
 
   const { push: toast } = useToast();
+
+  // P0 修复：useState 初始化器只在首次挂载取一次 props；而本 modal 在 Dashboard 持久挂载，
+  // 不同步会导致点不同决议的"记一笔"时表单仍是上一次/空的 symbol/方向 → 记错账。
+  // open 变 true 或预填 props 变化时，重新同步到新默认值并清空录入字段。
+  useEffect(() => {
+    if (!open) return;
+    setSymbol(defaultSymbol);
+    setDirection(defaultDirection);
+    setUnits("");
+    setPrice("");
+    setCostCurrency("CNY");
+    setNote("");
+    setConfirmed(false);
+    setError(null);
+  }, [open, defaultSymbol, defaultDirection]);
 
   // 每次 open 时重置表单到默认值（避免上次填写残留）
   // 用 key 控制更干净，但这里简单做 reset 就够了
@@ -195,16 +210,20 @@ export function RecordModal({
               onChange={(e) => setPrice(e.target.value)}
               placeholder="例如 31.50"
             />
-            <select
-              className={`${selectClass} w-28 shrink-0`}
+            <input
+              type="text"
+              list="record-currency-options"
+              className={`${inputClass} w-28 shrink-0`}
               value={costCurrency}
-              onChange={(e) => setCostCurrency(e.target.value)}
-            >
-              <option value="CNY">CNY</option>
-              <option value="AUD">AUD</option>
-              <option value="USD">USD</option>
-              <option value="HKD">HKD</option>
-            </select>
+              onChange={(e) => setCostCurrency(e.target.value.toUpperCase())}
+              placeholder="CNY"
+              maxLength={5}
+            />
+            <datalist id="record-currency-options">
+              {["CNY", "AUD", "USD", "HKD", "EUR", "GBP", "JPY", "SGD"].map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
           </div>
         </Field>
 

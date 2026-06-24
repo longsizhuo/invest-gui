@@ -76,7 +76,7 @@ export function GoldTradeDialog({
             required
           />
         </Field>
-        <Field label="单价 (CNY/g)" hint="浙商当日实际成交克价">
+        <Field label="单价 (CNY/g)" hint="当日实际成交克价">
           <input
             type="number"
             inputMode="decimal"
@@ -92,7 +92,7 @@ export function GoldTradeDialog({
         {total && (
           <div className="rounded bg-[var(--surface-base)]/60 border border-[var(--border-subtle)] px-3 py-2 text-sm text-[var(--text-primary)] tabular-nums">
             预计{mode === "buy" ? "支付" : "毛收入"} ¥{total}
-            {mode === "sell" && <span className="text-xs text-[var(--text-tertiary)] ml-2">（卖出会扣 0.38% 手续费）</span>}
+            {mode === "sell" && <span className="text-xs text-[var(--text-tertiary)] ml-2">（卖出按渠道手续费率扣减，实际以后端结算为准）</span>}
           </div>
         )}
         {error && <p className="text-sm text-neg">⚠ {error}</p>}
