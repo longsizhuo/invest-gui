@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/longsizhuo/invest-gui/compare/v0.2.0...v0.2.1) (2026-06-25)
+
+
+### Bug Fixes
+
+* **gui:** 联调 bug 合修（[#3](https://github.com/longsizhuo/invest-gui/issues/3) [#4](https://github.com/longsizhuo/invest-gui/issues/4) [#5](https://github.com/longsizhuo/invest-gui/issues/5) [#6](https://github.com/longsizhuo/invest-gui/issues/6) + [#7](https://github.com/longsizhuo/invest-gui/issues/7) 部分） ([#15](https://github.com/longsizhuo/invest-gui/issues/15)) ([8a916d4](https://github.com/longsizhuo/invest-gui/commit/8a916d4ccf12c15441a6695ea2795a4abe2d3d64))
+
 ## [0.2.0](https://github.com/longsizhuo/invest-gui/compare/v0.1.0...v0.2.0) (2026-06-23)
 
 
