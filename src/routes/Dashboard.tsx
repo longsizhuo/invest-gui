@@ -99,7 +99,11 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex gap-2">
-          {/* 批量导入历史交易入口 */}
+          {/* 智能导入持仓（文本/CSV → LLM 解析） */}
+          <Link to="/holdings/import-portfolio">
+            <Button variant="outline">导入持仓</Button>
+          </Link>
+          {/* 批量录入历史交易入口 */}
           <Link to="/holdings/import">
             <Button variant="outline">批量导入</Button>
           </Link>

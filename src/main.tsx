@@ -16,6 +16,8 @@ const Strategy = React.lazy(() => import("./routes/Strategy"));
 const Committee = React.lazy(() => import("./routes/committee"));
 const System = React.lazy(() => import("./routes/System"));
 const BulkImport = React.lazy(() => import("./routes/Holdings/BulkImport"));
+const SmartImportHoldings = React.lazy(() => import("./routes/Holdings/SmartImportHoldings"));
+const Discipline = React.lazy(() => import("./routes/Discipline"));
 const PublicStats = React.lazy(() => import("./routes/PublicStats"));
 const Settings = React.lazy(() => import("./routes/Settings"));
 
@@ -74,8 +76,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route path="strategy" element={<Strategy />} />
                 <Route path="committee" element={<Committee />} />
                 <Route path="system" element={<System />} />
-                {/* 批量录入：/holdings/import */}
+                {/* 批量录入历史交易：/holdings/import */}
                 <Route path="holdings/import" element={<BulkImport />} />
+                {/* 智能导入持仓（文本/CSV → LLM 解析）：/holdings/import-portfolio */}
+                <Route path="holdings/import-portfolio" element={<SmartImportHoldings />} />
+                {/* 纪律台账（ADR-023）：/discipline */}
+                <Route path="discipline" element={<Discipline />} />
                 {/* 设置：唯一 GUI-only 数据入口（wealth_context 等 agent 拿不到的字段）*/}
                 <Route path="settings" element={<Settings />} />
                 {/* /transparency 已并入 /committee（书签兼容） */}
