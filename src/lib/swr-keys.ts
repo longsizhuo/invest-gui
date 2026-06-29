@@ -18,6 +18,9 @@ export const SWR_KEYS = {
   /** GET /api/holdings —— 通用化持仓列表（含行情） */
   HOLDINGS: "/api/holdings",
 
+  /** POST /api/holdings/import —— 自由文本/CSV → LLM 解析持仓（SmartImportHoldings 写后 mutate HOLDINGS） */
+  HOLDINGS_IMPORT: "/api/holdings/import",
+
   /** GET /api/portfolio —— 旧版 portfolio（部分 dialog 还在用） */
   PORTFOLIO: "/api/portfolio",
 
@@ -64,6 +67,9 @@ export const SWR_KEYS = {
 
   /** GET /api/verdict_review/report */
   VERDICT_REVIEW_REPORT: "/api/verdict_review/report",
+
+  /** GET /api/discipline —— 委员会纪律台账（不作为率 + 拦冲动 + 反事实损益；ADR-023） */
+  DISCIPLINE: "/api/discipline",
 
   // ─── 系统 ─────────────────────────────────────────────────────────────────
   /** GET /api/jobs/status —— Cron Jobs 时刻表 */

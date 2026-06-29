@@ -33,6 +33,7 @@ const PRIMARY_NAV = [
   { to: "/history", label: "流水" },
   { to: "/strategy", label: "策略" },
   { to: "/committee", label: "委员会" },
+  { to: "/discipline", label: "纪律" },
 ];
 
 const SECONDARY_NAV = [

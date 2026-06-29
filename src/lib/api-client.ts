@@ -31,6 +31,8 @@ export type StrategyWriteResponse = components["schemas"]["StrategyWriteResponse
 export type HoldingV2 = components["schemas"]["HoldingV2"];
 export type HoldingQuote = components["schemas"]["HoldingQuote"];
 export type HoldingsListResponse = components["schemas"]["HoldingsListResponse"];
+export type HoldingsImportRequest = components["schemas"]["HoldingsImportRequest"];
+export type HoldingsImportResponse = components["schemas"]["HoldingsImportResponse"];
 
 // 系统/原理可视化（v2 + v3）
 export type JobStatus = components["schemas"]["JobStatus"];
@@ -289,4 +291,34 @@ export async function putJSON<TReq, TRes>(url: string, body: TReq): Promise<TRes
 /** DELETE helper（删 target_asset 用） */
 export async function deleteJSON<TRes>(url: string): Promise<TRes> {
   return requestJSON<TRes>("DELETE", url);
+}
+
+/**
+ * 持仓导入：自由文本/CSV → LLM 解析。
+ * commit=false 只预览不落盘；commit=true 非破坏写入（只加新 symbol、cash 只填当前为 0 的币种）。
+ */
+export async function importHoldings(content: string, commit: boolean): Promise<HoldingsImportResponse> {
+  return postJSON<HoldingsImportRequest, HoldingsImportResponse>(SWR_KEYS.HOLDINGS_IMPORT, { content, commit });
+}
+
+/**
+ * 纪律台账（/api/discipline 返回 plain dict，后端无 Pydantic schema → 这里手动 typed）。
+ * 只取渲染需要的字段；markdown 是后端已渲染好的人话（单一可信源）。
+ */
+export interface DisciplineResponse {
+  summary: {
+    inaction: {
+      total_verdicts: number;
+      by_verdict: Record<string, number>;
+      hold: number;
+      hold_rate: number | null;
+    };
+    interventions: {
+      total: number;
+      windows?: number[];
+      caveat?: string;
+      by_family: Record<string, Record<string, number>>;
+    };
+  };
+  markdown: string;
 }

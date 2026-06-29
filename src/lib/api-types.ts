@@ -268,6 +268,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/holdings/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Holdings
+         * @description 自由文本/CSV 持仓描述 → LLM 解析成结构化持仓。GUI 小白粘贴券商持仓、agent 批量录入都走这。
+         *
+         *     commit=false（默认）：只返回解析预览，**不落盘**（让用户/GUI 先确认）。
+         *     commit=true：**非破坏**写入 —— 只加 portfolio 里还没有的 symbol、cash 只填当前为 0 的币种，
+         *     已存在的 symbol / 已有余额的币种跳过并在 summary 里报告，绝不覆盖真实数据（重复导入幂等）。
+         *     需要后端配 LLM key（无 key → 400）。等价 CLI `run.sh import`。
+         */
+        post: operations["import_holdings_api_holdings_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/holdings/{symbol}": {
         parameters: {
             query?: never;
@@ -1253,6 +1278,28 @@ export interface paths {
          *     GUI 用此端点告诉用户 'AI 在 18:05 主动查了 multi_timeframe(NDQ.AX) 拿技术指标'
          */
         get: operations["get_tool_calls_api_agents_tool_calls_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/discipline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Discipline
+         * @description 委员会纪律台账(只读):默认不作为率(HOLD 占比)+ 拦截冲动操作次数 + 反事实省/费钱。
+         *     对齐 ADR-023——委员会可证价值是纪律/透明,不是 alpha。GUI/agent 据此展示"它拦了什么"。
+         *     返回 {summary: {...}, markdown: "..."}(结构化 + 已渲染人话,任选其一用)。
+         */
+        get: operations["get_discipline_api_discipline_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2321,6 +2368,48 @@ export interface components {
             pnl?: number | null;
         };
         /**
+         * HoldingsImportRequest
+         * @description POST /api/holdings/import body — 自由文本/CSV 持仓描述 → 结构化持仓
+         */
+        HoldingsImportRequest: {
+            /**
+             * Content
+             * @description 自然语言或 CSV 持仓描述
+             */
+            content: string;
+            /**
+             * Commit
+             * @description false=只预览解析结果不落盘；true=非破坏写入（只加新 symbol、cash 只填当前为 0 的币种）
+             * @default false
+             */
+            commit: boolean;
+        };
+        /**
+         * HoldingsImportResponse
+         * @description POST /api/holdings/import 返回 — parsed 预览 +（commit 时）写入 summary
+         */
+        HoldingsImportResponse: {
+            /**
+             * Parsed
+             * @description LLM 解析出的 {cash, holdings}
+             */
+            parsed: {
+                [key: string]: unknown;
+            };
+            /**
+             * Committed
+             * @description 是否已落盘
+             */
+            committed: boolean;
+            /**
+             * Summary
+             * @description commit 时的 {added_holdings, skipped_holdings, cash_set, cash_skipped}
+             */
+            summary?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
          * HoldingsListResponse
          * @description GET /api/holdings 响应
          */
@@ -3163,6 +3252,11 @@ export interface components {
              * @description 自由文本说明，如 '家族资金 ¥4M 仅作破产兜底，不可作投资使用'
              */
             lifestyle_notes?: string | null;
+            /**
+             * Monthly Contribution Cny
+             * @description 每月从工资/外部补充进投资池的额度（CNY，开口池）。让 WealthContextOfficer 把 portfolio cash 当流量而非封闭快照：低现金更不算流动性风险、30% 现金目标软化。**仍不算当下可投资金**——加仓上限永远 = 当前 portfolio cash。
+             */
+            monthly_contribution_cny?: number | null;
         };
         /**
          * WithdrawRequest
@@ -3528,6 +3622,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DailyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_holdings_api_holdings_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HoldingsImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoldingsImportResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4997,6 +5124,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_discipline_api_discipline_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };
