@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/longsizhuo/invest-gui/compare/v0.2.1...v0.3.0) (2026-06-29)
+
+
+### Features
+
+* **gui:** 纪律台账 + 智能持仓导入两个面板 (对齐后端 [#115](https://github.com/longsizhuo/invest-gui/issues/115)/[#120](https://github.com/longsizhuo/invest-gui/issues/120)) ([d674301](https://github.com/longsizhuo/invest-gui/commit/d6743019ae0ec97ddc626c50c97522652bec8e89))
+* **gui:** 纪律台账 + 智能持仓导入两个面板(对齐后端 [#115](https://github.com/longsizhuo/invest-gui/issues/115)/[#120](https://github.com/longsizhuo/invest-gui/issues/120)) ([fe3a3d3](https://github.com/longsizhuo/invest-gui/commit/fe3a3d30db3d8440ed87cdd747f47d4a943f1a31))
+
 ## [0.2.1](https://github.com/longsizhuo/invest-gui/compare/v0.2.0...v0.2.1) (2026-06-25)
 
 
