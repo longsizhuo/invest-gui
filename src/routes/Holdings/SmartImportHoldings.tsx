@@ -101,6 +101,10 @@ export default function SmartImportHoldings() {
           粘贴你的持仓描述（自然语言或 CSV 都行），后端用 LLM 解析成结构化持仓供你确认。
           <strong className="text-[var(--text-primary)]">确认导入只新增、不覆盖</strong>已有持仓。
         </p>
+        <p className="text-xs text-[var(--text-tertiary)] mt-1">
+          有券商 App <strong className="text-[var(--text-secondary)]">截图</strong>？把图发给你的 AI 助手（Claude / Cursor），
+          让它转成文字粘到下面——或直接照着截图手敲。
+        </p>
       </header>
 
       <textarea
