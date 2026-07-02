@@ -345,6 +345,38 @@ export default function Settings() {
  * 落盘 memory/.state/config_overrides.json，优先级高于 env，web/cron/skill 三进程共读。
  * agent 等价用 `skill config [--set K V] [--clear K]`。
  */
+/** 非 bool/enum 的 config 值（int/float/cron 字符串等）用文本输入编辑，
+ *  失焦或回车提交。此前这类 key 被兜底渲染成「开启/关闭」布尔下拉，
+ *  onChange 会 PUT true/false 直接写坏数值——2026-07-03 随 event.watch_schedule 一起修。 */
+function TextConfigInput({
+  value,
+  disabled,
+  onCommit,
+}: {
+  value: string;
+  disabled: boolean;
+  onCommit: (v: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  // 后端值变了（保存成功 / 别处改了）同步回输入框
+  useEffect(() => setDraft(value), [value]);
+  const commit = () => {
+    if (draft.trim() !== value) onCommit(draft.trim());
+  };
+  return (
+    <input
+      className={`${inputClass} font-mono`}
+      value={draft}
+      disabled={disabled}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+      }}
+    />
+  );
+}
+
 function CommitteeConfigCard() {
   const { data, mutate } = useSWR<ConfigResponse>(SWR_KEYS.CONFIG, fetcher);
   const { push: showToast } = useToast();
@@ -398,7 +430,7 @@ function CommitteeConfigCard() {
                   </option>
                 ))}
               </select>
-            ) : (
+            ) : it.type === "bool" ? (
               <select
                 className={selectClass}
                 value={it.value ? "true" : "false"}
@@ -408,6 +440,13 @@ function CommitteeConfigCard() {
                 <option value="true">开启</option>
                 <option value="false">关闭</option>
               </select>
+            ) : (
+              // int / float / cron 等：文本输入，失焦或回车提交（后端按白名单 type 强转+校验）
+              <TextConfigInput
+                value={String(it.value ?? "")}
+                disabled={busy === it.key}
+                onCommit={(v) => change(it.key, v)}
+              />
             )}
             {it.overridden && (
               <span className="text-xs text-[var(--accent)] mt-1 inline-block">
