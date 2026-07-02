@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.1](https://github.com/longsizhuo/invest-gui/compare/v0.3.0...v0.3.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* **settings:** config 卡非 bool/enum 值改文本输入,不再错渲染成布尔开关 ([829ca9a](https://github.com/longsizhuo/invest-gui/commit/829ca9ab5f739855ac09d376c2120cd9fb70ed24))
+
+
+### Docs
+
+* **holdings:** 智能导入页加截图→AI助手转文字提示(B2) ([5fcf26a](https://github.com/longsizhuo/invest-gui/commit/5fcf26a16b34dbe01d939d558a3f915916c8a0e8))
+* **holdings:** 智能导入页加截图提示(B2 配套) ([ef77047](https://github.com/longsizhuo/invest-gui/commit/ef77047a78bac913b798ea9e14afa1fa1eb1b8d3))
+
 ## [0.3.0](https://github.com/longsizhuo/invest-gui/compare/v0.2.1...v0.3.0) (2026-06-29)
 
 

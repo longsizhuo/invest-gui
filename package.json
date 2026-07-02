@@ -1,7 +1,7 @@
 {
   "name": "invest-gui",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "description": "invest 多资产 agent 系统的 Web GUI（消费 longsizhuo/openInvest 的 FastAPI）",
   "scripts": {
