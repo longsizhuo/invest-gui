@@ -1340,6 +1340,7 @@ export interface paths {
          * @description 命中率汇总，按来源分 live / backtest / contaminated 三桶（ADR-022：绝不合并成一个数）。
          *
          *     只有 live 桶是业绩；另两桶标注非业绩。任何格子 n<30 命中率置 null（红线 #2）。
+         *     周末休市资产（FX/加密除外）的周末决议（基准=周五收盘，周五样本的重复）不进任何桶，只计 weekend_dup_excluded。
          */
         get: operations["get_verdict_review_summary_api_verdict_review_summary_get"];
         put?: never;
@@ -3244,6 +3245,8 @@ export interface components {
         VerdictReviewSummary: {
             /** Total */
             total: number;
+            /** Weekend Dup Excluded */
+            weekend_dup_excluded: number;
             live: components["schemas"]["VerdictReviewBucket"];
             backtest: components["schemas"]["VerdictReviewBucket"];
             contaminated: components["schemas"]["VerdictReviewBucket"];
