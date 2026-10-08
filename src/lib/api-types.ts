@@ -1337,7 +1337,9 @@ export interface paths {
         };
         /**
          * Get Verdict Review Summary
-         * @description 命中率汇总（按时间窗口 + 按 verdict 类型）。GUI marketing 主战场
+         * @description 命中率汇总，按来源分 live / backtest / contaminated 三桶（ADR-022：绝不合并成一个数）。
+         *
+         *     只有 live 桶是业绩；另两桶标注非业绩。任何格子 n<30 命中率置 null（红线 #2）。
          */
         get: operations["get_verdict_review_summary_api_verdict_review_summary_get"];
         put?: never;
@@ -3146,6 +3148,41 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /**
+         * VerdictReviewBucket
+         * @description 单个来源桶的命中率聚合。ADR-022：桶之间绝不合并成一个命中率。
+         *
+         *     n<30 的格子命中率置 null（红线 #2），只留 n。
+         */
+        VerdictReviewBucket: {
+            /** N */
+            n: number;
+            /** Is Performance */
+            is_performance: boolean;
+            /** Label */
+            label: string;
+            /** Rates Suppressed Sub30 */
+            rates_suppressed_sub30: boolean;
+            /** By Window */
+            by_window: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** By Verdict */
+            by_verdict: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Directional Only Hit Rate */
+            directional_only_hit_rate?: number | null;
+            /**
+             * Directional N
+             * @default 0
+             */
+            directional_n: number;
+        };
         /** VerdictReviewDataResponse */
         VerdictReviewDataResponse: {
             /** Count */
@@ -3199,25 +3236,17 @@ export interface components {
         };
         /**
          * VerdictReviewSummary
-         * @description 命中率汇总
+         * @description 命中率汇总——按来源分三桶（2026-10 D4，ADR-022）。
+         *
+         *     live = 实盘决议（唯一业绩口径）；backtest = 干净段回测（中性模拟持仓，非业绩）；
+         *     contaminated = 决议日落在 LLM 训练窗口（记忆穿越，非业绩，不分 source）。
          */
         VerdictReviewSummary: {
             /** Total */
             total: number;
-            /** By Window */
-            by_window: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-            /** By Verdict */
-            by_verdict: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-            /** Directional Only Hit Rate */
-            directional_only_hit_rate?: number | null;
+            live: components["schemas"]["VerdictReviewBucket"];
+            backtest: components["schemas"]["VerdictReviewBucket"];
+            contaminated: components["schemas"]["VerdictReviewBucket"];
             /** Has Report Md */
             has_report_md: boolean;
         };

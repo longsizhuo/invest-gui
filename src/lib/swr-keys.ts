@@ -62,7 +62,7 @@ export const SWR_KEYS = {
     `/api/committee_sessions/${encodeURIComponent(date)}/${encodeURIComponent(symbol)}`,
 
   // ─── 命中率 / verdict review ───────────────────────────────────────────────
-  /** GET /api/verdict_review/summary */
+  /** GET /api/verdict_review/summary —— live / backtest / contaminated 三桶（只有 live 是业绩，ADR-022）；n<30 命中率为 null */
   VERDICT_REVIEW_SUMMARY: "/api/verdict_review/summary",
 
   /** GET /api/verdict_review/report */
