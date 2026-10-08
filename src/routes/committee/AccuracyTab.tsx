@@ -54,7 +54,7 @@ export function AccuracyTab() {
         <KpiCard
           label="live 决议数"
           value={String(live.n)}
-          hint="只计实盘决议；回测/污染样本另列，不计入"
+          hint={`只计实盘决议；回测/污染样本另列；周末休市资产的周末决议（=周五样本重复）${summary.weekend_dup_excluded} 条不计入`}
         />
         <KpiCard
           label="live 整体命中率（30d）"

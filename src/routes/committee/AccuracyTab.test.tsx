@@ -11,7 +11,8 @@ const bucket = (n: number, label: string, extra = {}) => ({
 });
 
 const SUMMARY = {
-  total: 1035,
+  total: 1039,
+  weekend_dup_excluded: 4,
   has_report_md: false,
   live: bucket(35, "live 实盘决议（唯一业绩口径）", {
     is_performance: true,
@@ -33,7 +34,8 @@ describe("AccuracyTab", () => {
       </SWRConfig>,
     );
     expect((await screen.findAllByText("35")).length).toBeGreaterThan(0); // live n
-    expect(screen.queryByText("1035")).toBeNull();                    // 不展示三桶合计
+    expect(screen.queryByText("1039")).toBeNull();                    // 不展示 jsonl 总行数
+    expect(screen.getByText(/周五样本重复）4 条不计入/)).toBeTruthy();  // D8 周末重复计数
     expect(screen.getAllByText("60.0%").length).toBeGreaterThan(0); // live 30d
     expect(screen.getByText(/回测干净段（非业绩）：1000 条/)).toBeTruthy();
     expect(screen.queryByText(/污染桶/)).toBeNull();                 // n=0 不列
