@@ -8,7 +8,7 @@ export const MultiCurrency = () => (
 
 export const WithZeroBalance = () => (
   <div style={{ width: 360 }}>
-    <CashSummaryCard cash={{ CNY: 225378.4, AUD: 0, USD: 0, HKD: 980.2 }} />
+    <CashSummaryCard cash={{ CNY: 80000, AUD: 0, USD: 0, HKD: 980.2 }} />
   </div>
 );
 

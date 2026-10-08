@@ -177,8 +177,8 @@ function formatNum(n: number): string {
 }
 
 /**
- * 单位数显示：整数不带 .0 小数（256.0 → 256），有小数则保留 4 位有效精度
- * 修 issue：用户反馈"256.0 股看着像 bug"
+ * 单位数显示：整数不带 .0 小数（100.0 → 100），有小数则保留 4 位有效精度
+ * 修 issue：用户反馈"100.0 股看着像 bug"
  */
 function formatUnits(n: number): string {
   if (Number.isInteger(n)) return n.toString();

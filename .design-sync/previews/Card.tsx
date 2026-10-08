@@ -31,7 +31,7 @@ export const WithActions = () => (
 export const Plain = () => (
   <div style={{ width: 360 }}>
     <Card>
-      <Row label="Total assets" value="¥225,378" />
+      <Row label="Total assets" value="¥80,000" />
       <Row label="Day change" value={<span style={{ color: "var(--neg)" }}>−¥1,204</span>} />
     </Card>
   </div>

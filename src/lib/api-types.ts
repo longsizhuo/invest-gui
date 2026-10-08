@@ -391,7 +391,7 @@ export interface paths {
         /**
          * Withdraw
          * @description 取出现金（v2: 任意币种 + 负数校验）。
-         *     余额不足默认 400 拒绝（PM 关切：避免 AUD -6894 类似事故）
+         *     余额不足默认 400 拒绝（PM 关切：避免 AUD 现金被扣成负数这类事故）
          *
          *     余额检查在 fcntl 锁内执行，避免并发取款 TOCTOU 竞态。
          */
@@ -1253,7 +1253,7 @@ export interface paths {
          * Get Data Sources Health
          * @description 所有数据源的当前可达性 + 最后成功拉取时间。GUI 透明化"我们用什么数据决策"
          *
-         *     B5 通用化（2026-05）：监控 symbol 不再硬编码作者持仓（NDQ.AX/GC=F），
+         *     B5 通用化（2026-05）：监控 symbol 不再硬编码固定列表，
          *     动态读用户实际 holdings；额外保留宏观指标（VIX/TNX/USDCNY 等）作背景。
          */
         get: operations["get_data_sources_health_api_data_sources_health_get"];
@@ -1949,7 +1949,7 @@ export interface components {
         DepositRequest: {
             /**
              * Currency
-             * @description cny=人民币 / aud=澳元（NDQ 子弹）
+             * @description cny=人民币 / aud=澳元
              * @default cny
              * @enum {string}
              */
@@ -3278,7 +3278,7 @@ export interface components {
             account_purpose?: string | null;
             /**
              * Lifestyle Notes
-             * @description 自由文本说明，如 '家族资金 ¥4M 仅作破产兜底，不可作投资使用'
+             * @description 自由文本说明，如 '家族资金仅作破产兜底，不可作投资使用'
              */
             lifestyle_notes?: string | null;
             /**

@@ -134,7 +134,7 @@ function JobsTab() {
 // =================== Regime ===================
 
 function RegimeTab() {
-  // 默认空，等用户输入再查（旧默认硬编码作者遗留的 NDQ.AX）；placeholder 已给示例
+  // 默认空，等用户输入再查（旧默认硬编码过一个固定 symbol）；placeholder 已给示例
   const [symbol, setSymbol] = useState("");
   const { data, error, isLoading } = useSWR<RegimeResponse>(
     symbol ? `/api/regime/${encodeURIComponent(symbol)}` : null,

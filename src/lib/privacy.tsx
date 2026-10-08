@@ -56,7 +56,7 @@ export function usePrivacy(): PrivacyContextValue {
 
 /**
  * 把数字脱敏成 ●●●●●● 占位（保留长度暗示量级，不让用户误以为是 0）。
- * 调用方先把数字格式化成字符串（如 "¥225,378"），由本函数决定是否替换。
+ * 调用方先把数字格式化成字符串（如 "¥80,000"），由本函数决定是否替换。
  */
 export function maskMoney(formatted: string, masked: boolean): string {
   if (!masked) return formatted;
@@ -71,7 +71,7 @@ export function maskMoney(formatted: string, masked: boolean): string {
  * <Money> 组件：包装绝对金额。masked 时显示 ●●●●●●。
  *
  * 用法：
- *   <Money value={225378} format={(n) => `¥${n.toLocaleString()}`} />
+ *   <Money value={80000} format={(n) => `¥${n.toLocaleString()}`} />
  */
 export function Money({
   value,

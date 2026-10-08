@@ -70,7 +70,7 @@ export default function Dashboard() {
 
   const realHoldings = data.holdings.filter((h) => !h.is_tracking_only);
   const trackingHoldings = data.holdings.filter((h) => h.is_tracking_only);
-  // 黄金按钮（浙商/CNY·g 等作者专属流程）仅在确实持金时显示，避免纯 A 股 fork 用户看到用不上的控件
+  // 黄金按钮（积存金/CNY·g 等渠道专属流程）仅在确实持金时显示，避免纯 A 股 fork 用户看到用不上的控件
   const hasGold = data.holdings.some(
     (h) => h.kind === "metal" || h.proxy_kind === "gold_cny_per_gram",
   );
