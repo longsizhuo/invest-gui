@@ -59,6 +59,7 @@ export type AgentPromptInfo = components["schemas"]["AgentPromptInfo"];
 export type RegimeRulesResponse = components["schemas"]["RegimeRulesResponse"];
 export type VerdictReviewItem = components["schemas"]["VerdictReviewItem"];
 export type VerdictReviewDataResponse = components["schemas"]["VerdictReviewDataResponse"];
+export type VerdictReviewBucket = components["schemas"]["VerdictReviewBucket"];
 export type VerdictReviewSummary = components["schemas"]["VerdictReviewSummary"];
 export type VerdictReviewReportResponse = components["schemas"]["VerdictReviewReportResponse"];
 export type DataSourceHealth = components["schemas"]["DataSourceHealth"];
