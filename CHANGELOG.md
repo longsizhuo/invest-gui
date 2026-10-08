@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.4.0](https://github.com/longsizhuo/invest-gui/compare/v0.3.0...v0.4.0) (2026-10-08)
+
+
+### Features
+
+* **accuracy:** consume verdict_review summary split by source ([#21](https://github.com/longsizhuo/invest-gui/issues/21)) ([9bc6a30](https://github.com/longsizhuo/invest-gui/commit/9bc6a30097ad1e94c6f1ee6336015aa63fc8283a))
+* **accuracy:** show weekend duplicates excluded from the verdict_review summary ([#22](https://github.com/longsizhuo/invest-gui/issues/22)) ([b5b95c2](https://github.com/longsizhuo/invest-gui/commit/b5b95c2e3fb4215e1f75abdf99c7b3738a20817e))
+* **committee:** show the backend's same-kind verdict lookup ([#23](https://github.com/longsizhuo/invest-gui/issues/23)) ([257ccbb](https://github.com/longsizhuo/invest-gui/commit/257ccbb01cbfb8c910aada09af32ca148226ecbb))
+
+
+### Bug Fixes
+
+* **settings:** config 卡非 bool/enum 值改文本输入,不再错渲染成布尔开关 ([829ca9a](https://github.com/longsizhuo/invest-gui/commit/829ca9ab5f739855ac09d376c2120cd9fb70ed24))
+
+
+### Docs
+
+* **holdings:** 智能导入页加截图→AI助手转文字提示(B2) ([5fcf26a](https://github.com/longsizhuo/invest-gui/commit/5fcf26a16b34dbe01d939d558a3f915916c8a0e8))
+* **holdings:** 智能导入页加截图提示(B2 配套) ([ef77047](https://github.com/longsizhuo/invest-gui/commit/ef77047a78bac913b798ea9e14afa1fa1eb1b8d3))
+
 ## [0.3.0](https://github.com/longsizhuo/invest-gui/compare/v0.2.1...v0.3.0) (2026-06-29)
 
 
