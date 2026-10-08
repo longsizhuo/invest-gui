@@ -65,7 +65,7 @@ type UserProfile = {
  * 没填 wealth_context 时不展示（不要让用户看到空 chip 困惑）。填了之后展示
  * 应急金额度 + 账户性质，配 Link 到 /settings 让用户改。
  *
- * 透明度价值：用户看到"agent 知道我有 ¥4M backup"，就明白为什么 Risk Officer
+ * 透明度价值：用户看到"agent 知道我有大额 backup"，就明白为什么 Risk Officer
  * 不会因为低 portfolio cash 喊清仓。
  */
 function WealthContextChips() {

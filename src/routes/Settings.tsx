@@ -278,7 +278,7 @@ export default function Settings() {
 
           <Field
             label="备注（自由文本）"
-            hint='示例："家族资金 ¥4M 仅作破产兜底，不可作为投资使用。加仓只能用 portfolio cash。"'
+            hint='示例："家族资金仅作破产兜底，不可作为投资使用。加仓只能用 portfolio cash。"'
           >
             <textarea
               className={`${inputClass} font-sans`}
@@ -313,9 +313,9 @@ export default function Settings() {
         </h2>
         <div className="text-sm space-y-2 text-[var(--text-secondary)]">
           <p>
-            没填 wealth_context 时：用户 portfolio cash 仅 ¥500 + NDQ 重仓 99.9%
+            没填 wealth_context 时：用户 portfolio cash 仅 ¥500 + 单一 ETF 重仓 99.9%
             → Risk Officer 报 <strong>high_risk</strong>，CIO 建议<strong>立即减仓 60%</strong>。
-            <em>但用户家族有 ¥4M 备用金，根本不存在流动性风险。</em>
+            <em>但用户家族有大额备用金，根本不存在流动性风险。</em>
           </p>
           <p>
             填了 wealth_context 后：Risk Officer 看到 SOLVENCY_BUFFER=strong，
