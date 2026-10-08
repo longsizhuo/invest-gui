@@ -9,6 +9,7 @@ import {
   type CommitteeSessionsResponse,
 } from "../lib/api-client";
 import { SWR_KEYS } from "../lib/swr-keys";
+import { ConfidenceLookup } from "../components/ConfidenceLookup";
 import { HoldingCard } from "../components/HoldingCard";
 import { CashSummaryCard } from "../components/CashSummaryCard";
 import { Button } from "../components/Button";
@@ -306,7 +307,7 @@ function RecentVerdicts({
               <th className="px-3 py-2 text-left">日期</th>
               <th className="px-3 py-2 text-left">资产</th>
               <th className="px-3 py-2 text-left">决议</th>
-              <th className="px-3 py-2 text-right">置信度</th>
+              <th className="px-3 py-2 text-right">同类决议（30 天）</th>
               <th className="px-3 py-2 text-right">建议 ¥</th>
               <th className="px-3 py-2 text-right"></th>
             </tr>
@@ -333,7 +334,7 @@ function RecentVerdicts({
                     <VerdictBadge verdict={s.verdict ?? null} />
                   </td>
                   <td className="px-3 py-2 text-right text-[var(--text-secondary)] text-xs font-mono">
-                    {s.confidence != null ? `${(s.confidence * 100).toFixed(0)}%` : "—"}
+                    <ConfidenceLookup lookup={s.confidence_lookup} confidence={s.confidence} />
                   </td>
                   <td className={`px-3 py-2 text-right text-xs font-mono ${toneClass}`}>
                     {action}

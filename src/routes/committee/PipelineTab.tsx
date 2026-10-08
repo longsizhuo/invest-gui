@@ -18,6 +18,7 @@ import { Button } from "../../components/Button";
 import { VerdictBadge, RoleBadge } from "../../components/StatusBadge";
 import { parseCommitteeMd, type ParsedCommittee } from "../../lib/parseCommitteeMd";
 import { shortTime, labelPhase } from "../../lib/format";
+import { ConfidenceLookup } from "../../components/ConfidenceLookup";
 
 /**
  * 委员会 Pipeline 页 — 默认 Live 真跑模式
@@ -277,6 +278,7 @@ function VerdictResultCard({ status }: { status: { result?: unknown } }) {
   const result = status.result as {
     asset?: string;
     verdict?: { verdict?: string; confidence?: number; alloc_cny?: number; dominant_view?: string };
+    confidence_lookup?: string | null;
     debate_meta?: { final_round?: number; max_rounds?: number; converged?: boolean };
   } | null;
   const { enabled: privacyOn } = usePrivacy();
@@ -301,9 +303,9 @@ function VerdictResultCard({ status }: { status: { result?: unknown } }) {
           <VerdictBadge verdict={v?.verdict ?? null} />
         </div>
         <div>
-          <div className="text-xs text-[var(--text-tertiary)]">置信度</div>
-          <div className="text-lg tabular-nums text-[var(--accent)] font-semibold">
-            {v?.confidence != null ? v.confidence.toFixed(2) : "—"}
+          <div className="text-xs text-[var(--text-tertiary)]">同类决议（30 天）</div>
+          <div className="text-sm text-[var(--accent)]">
+            <ConfidenceLookup lookup={result.confidence_lookup} confidence={v?.confidence} />
           </div>
         </div>
         {v?.dominant_view && (
@@ -381,7 +383,7 @@ function HistoryMode() {
         >
           {sessions?.sessions.map((s, i) => (
             <option key={i} value={`${s.date}::${s.symbol}`}>
-              {s.date} · {s.symbol} · {s.verdict ?? "?"} ({s.confidence ?? "?"})
+              {s.date} · {s.symbol} · {s.verdict ?? "?"}
             </option>
           ))}
         </select>
