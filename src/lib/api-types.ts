@@ -1723,6 +1723,11 @@ export interface components {
             symbol: string;
             /** Content */
             content: string;
+            /**
+             * Confidence Lookup
+             * @description 同 CommitteeSessionSummary.confidence_lookup
+             */
+            confidence_lookup?: string | null;
         };
         /** CommitteeSessionSummary */
         CommitteeSessionSummary: {
@@ -1732,8 +1737,16 @@ export interface components {
             symbol: string;
             /** Verdict */
             verdict?: string | null;
-            /** Confidence */
+            /**
+             * Confidence
+             * @description CIO 自报原数（留档；展示请用 confidence_lookup）
+             */
             confidence?: number | null;
+            /**
+             * Confidence Lookup
+             * @description 给人看的同类决议查表：同类决议（live + 纸面舰队）30 天后怎样，末尾注明样本来源；或「样本不足」/「强制 HOLD」标签
+             */
+            confidence_lookup?: string | null;
             /** Dominant View */
             dominant_view?: string | null;
             /** Suggested Alloc Cny */

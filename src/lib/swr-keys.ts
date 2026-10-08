@@ -45,7 +45,8 @@ export const SWR_KEYS = {
   STRATEGY: "/api/strategy",
 
   // ─── 委员会 ───────────────────────────────────────────────────────────────
-  /** GET /api/committee_sessions?limit=N —— 历史决议列表（N 在调用处拼） */
+  /** GET /api/committee_sessions?limit=N —— 历史决议列表（N 在调用处拼）。
+   *  每条带 confidence_lookup（裁决旁展示的同类决议查表）；confidence 是 CIO 自报原数，只小字留档 */
   COMMITTEE_SESSIONS_BASE: "/api/committee_sessions",
 
   /** GET /api/committee_sessions?limit=1 —— DashboardHero 最近一条 */
@@ -57,7 +58,7 @@ export const SWR_KEYS = {
   /** GET /api/committee_sessions?limit=100 —— HistoryTab 完整列表 */
   COMMITTEE_SESSIONS_100: "/api/committee_sessions?limit=100",
 
-  /** 动态：GET /api/committee_sessions/{date}/{symbol} */
+  /** 动态：GET /api/committee_sessions/{date}/{symbol} —— 完整 markdown + confidence_lookup */
   committeeSessionDetail: (date: string, symbol: string) =>
     `/api/committee_sessions/${encodeURIComponent(date)}/${encodeURIComponent(symbol)}`,
 

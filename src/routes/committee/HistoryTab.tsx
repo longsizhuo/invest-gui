@@ -7,6 +7,7 @@ import {
 } from "../../lib/api-client";
 import { SWR_KEYS } from "../../lib/swr-keys";
 import { VerdictBadge } from "../../components/StatusBadge";
+import { ConfidenceLookup } from "../../components/ConfidenceLookup";
 import { CommitteeRolesPanel } from "../../components/CommitteeRolesPanel";
 import { verdictAction } from "../../lib/format";
 import { usePrivacy } from "../../lib/privacy";
@@ -78,7 +79,7 @@ export function HistoryTab() {
                 <th className="px-2 py-1.5 text-left font-medium">日期</th>
                 <th className="px-2 py-1.5 text-left font-medium">资产</th>
                 <th className="px-2 py-1.5 text-left font-medium">verdict（建议）</th>
-                <th className="px-2 py-1.5 text-right font-medium">置信度</th>
+                <th className="px-2 py-1.5 text-right font-medium">同类决议（30 天）</th>
                 <th className="px-2 py-1.5 text-right font-medium">建议 ¥</th>
               </tr>
             </thead>
@@ -105,7 +106,7 @@ export function HistoryTab() {
                       <VerdictBadge verdict={s.verdict ?? null} />
                     </td>
                     <td className="px-2 py-1 text-right text-[var(--text-secondary)] font-mono">
-                      {s.confidence != null ? `${(s.confidence * 100).toFixed(0)}%` : "—"}
+                      <ConfidenceLookup lookup={s.confidence_lookup} confidence={s.confidence} />
                     </td>
                     <td
                       className={`px-2 py-1 text-right font-mono ${
@@ -187,11 +188,10 @@ function CommitteeDetail({ date, symbol }: { date: string; symbol: string }) {
         </p>
         {/* 第二行：中文动作 + 金额（Tester 否决项的核心修复）*/}
         <p className={`font-display text-3xl mb-2 ${toneClass}`}>{action}</p>
-        {/* 第三行：原始 verdict 缩写 + 置信度（次要信息，给追根究底的）*/}
+        {/* 第三行：原始 verdict 缩写 + 同类决议查表（小字自报，给追根究底的）*/}
         <p className="text-xs text-[var(--text-tertiary)] font-mono">
-          原始 verdict: {parsed.verdict ?? "—"}
-          {parsed.confidence != null &&
-            ` · 置信 ${(parsed.confidence * 100).toFixed(0)}%`}
+          原始 verdict: {parsed.verdict ?? "—"} ·{" "}
+          <ConfidenceLookup lookup={data.confidence_lookup} confidence={parsed.confidence} />
         </p>
       </header>
 

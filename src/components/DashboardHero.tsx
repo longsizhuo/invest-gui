@@ -4,6 +4,7 @@ import { fetcher } from "../lib/api-client";
 import { SWR_KEYS } from "../lib/swr-keys";
 import { usePrivacy } from "../lib/privacy";
 import { verdictAction } from "../lib/format";
+import { ConfidenceLookup } from "./ConfidenceLookup";
 
 /**
  * Dashboard Hero landmark
@@ -38,6 +39,7 @@ type CommitteeSessionsResp = {
     symbol: string;
     verdict?: string | null;
     confidence?: number | null;
+    confidence_lookup?: string | null;
     dominant_view?: string | null;
     suggested_alloc_cny?: number | null;
   }>;
@@ -263,11 +265,10 @@ function CommitteeMini() {
       </p>
       {/* 第一行：中文动作 + 金额，明显高亮 */}
       <p className={`font-display text-2xl mb-1 ${toneClass}`}>{action}</p>
-      {/* 第二行：原始 verdict (TRIM 等) + 资产 + 日期 + 置信度 */}
+      {/* 第二行：原始 verdict (TRIM 等) + 资产 + 日期 + 同类决议查表（小字自报） */}
       <p className="text-xs text-[var(--text-tertiary)] font-mono">
-        {latest.verdict ?? "—"} · {latest.symbol} · {latest.date}
-        {latest.confidence != null &&
-          ` · 置信 ${(latest.confidence * 100).toFixed(0)}%`}
+        {latest.verdict ?? "—"} · {latest.symbol} · {latest.date} ·{" "}
+        <ConfidenceLookup lookup={latest.confidence_lookup} confidence={latest.confidence} />
       </p>
       <Link
         to="/committee"
